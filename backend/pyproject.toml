@@ -13,6 +13,12 @@ dependencies = [
     "pydantic-settings",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "pytest",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
@@ -27,3 +33,7 @@ select = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+exclude = ["alembic*"]
