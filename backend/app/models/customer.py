@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.reservation import Reservation
 
 
 class Customer(Base):
@@ -13,3 +18,8 @@ class Customer(Base):
     preferred_contact_method: Mapped[str] = mapped_column(String(50), nullable=False)
     messenger_user_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+reservations: Mapped[list["Reservation"]] = relationship(
+    back_populates="customer",
+)
