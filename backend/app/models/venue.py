@@ -6,7 +6,7 @@ from app.db.base import Base
 
 class Venue(Base):
     __tablename__ = "venues"
-    
+
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -18,4 +18,3 @@ class Venue(Base):
     facebook_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     bank_account_info: Mapped[str | None] = mapped_column(Text, nullable=True)
     quick_message: Mapped[str | None] = mapped_column(Text, nullable=True)
-
