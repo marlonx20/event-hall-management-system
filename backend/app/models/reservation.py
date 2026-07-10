@@ -10,6 +10,8 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.customer import Customer
+    from app.models.payment import Payment
+    from app.models.venue import Venue
 
 
 class ReservationStatus(StrEnum):
@@ -79,4 +81,12 @@ class Reservation(Base):
 
     customer: Mapped["Customer"] = relationship(
         back_populates="reservations",
+    )
+    venue: Mapped["Venue"] = relationship(
+        back_populates="reservations",
+    )
+
+    payments: Mapped[list["Payment"]] = relationship(
+        back_populates="reservation",
+        cascade="all, delete-orphan",
     )

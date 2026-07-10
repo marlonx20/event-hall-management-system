@@ -1,7 +1,13 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.reservation import Reservation
+    from app.models.task import Task
 
 
 class Venue(Base):
@@ -18,3 +24,13 @@ class Venue(Base):
     facebook_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     bank_account_info: Mapped[str | None] = mapped_column(Text, nullable=True)
     quick_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+reservations: Mapped[list["Reservation"]] = relationship(
+    back_populates="venue",
+)
+
+task: Mapped[list["Task"]] = relationship(
+    back_populates="venue",
+    cascade="all, delete-orphan",
+)

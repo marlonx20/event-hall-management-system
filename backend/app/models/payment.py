@@ -1,12 +1,16 @@
 from datetime import date
 from decimal import Decimal
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, ForeignKey, Numeric, String
 from sqlalchemy import Enum as SqlEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.model.reservation import Reservation
 
 
 class PaymentMethod(StrEnum):
@@ -66,3 +70,8 @@ class Payment(Base):
         String(100),
         nullable=True,
     )
+
+
+reservation: Mapped["Reservation"] = relationship(
+    back_populates="payments",
+)
