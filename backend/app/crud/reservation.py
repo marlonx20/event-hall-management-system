@@ -1,12 +1,11 @@
-from app.schemas.reservation import (
-    ReservationCreate,
-    ReservationUpdate,
-)
+from datetime import date
+
+from app.schemas.reservation import ReservationCreate, ReservationUpdate
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.constants import DEFAULT_VENUE_ID
-from app.models.reservation import Reservation
+from app.models.reservation import Reservation, ReservationStatus
 
 
 def create_reservation(
@@ -25,11 +24,8 @@ def create_reservation(
     return reservation
 
 
-def get_reservations(
-    db: Session,
-) -> list[Reservation]:
+def get_reservations(db: Session) -> list[Reservation]:
     statement = select(Reservation).order_by(Reservation.event_date)
-
     return list(db.scalars(statement).all())
 
 
@@ -38,6 +34,24 @@ def get_reservation(
     reservation_id: int,
 ) -> Reservation | None:
     return db.get(Reservation, reservation_id)
+
+
+def get_active_reservation_by_date(
+    db: Session,
+    event_date: date,
+    excluded_reservation_id: int | None = None,
+) -> Reservation | None:
+    statement = select(Reservation).where(
+        Reservation.event_date == event_date,
+        Reservation.status != ReservationStatus.CANCELLED,
+    )
+
+    if excluded_reservation_id is not None:
+        statement = statement.where(
+            Reservation.id != excluded_reservation_id,
+        )
+
+    return db.scalar(statement)
 
 
 def update_reservation(
