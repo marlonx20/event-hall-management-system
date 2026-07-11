@@ -34,3 +34,7 @@ class ReservationRead(ReservationBase):
     damage_charge: Decimal | None = None
 
     model_config = {"from_attributes": True}
+
+
+class ReservationUpdate(ReservationBase):
+    pass

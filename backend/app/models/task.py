@@ -65,7 +65,6 @@ class Task(Base):
         nullable=True,
     )
 
-
-venue: Mapped["Venue"] = relationship(
-    back_populates="task",
-)
+    venue: Mapped["Venue"] = relationship(
+        back_populates="tasks",
+    )

@@ -19,7 +19,6 @@ class Customer(Base):
     messenger_user_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-
-reservations: Mapped[list["Reservation"]] = relationship(
-    back_populates="customer",
-)
+    reservations: Mapped[list["Reservation"]] = relationship(
+        back_populates="customer",
+    )

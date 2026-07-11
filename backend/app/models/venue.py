@@ -25,12 +25,11 @@ class Venue(Base):
     bank_account_info: Mapped[str | None] = mapped_column(Text, nullable=True)
     quick_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    reservations: Mapped[list["Reservation"]] = relationship(
+        back_populates="venue",
+    )
 
-reservations: Mapped[list["Reservation"]] = relationship(
-    back_populates="venue",
-)
-
-task: Mapped[list["Task"]] = relationship(
-    back_populates="venue",
-    cascade="all, delete-orphan",
-)
+    tasks: Mapped[list["Task"]] = relationship(
+        back_populates="venue",
+        cascade="all, delete-orphan",
+    )

@@ -71,7 +71,6 @@ class Payment(Base):
         nullable=True,
     )
 
-
-reservation: Mapped["Reservation"] = relationship(
-    back_populates="payments",
-)
+    reservation: Mapped["Reservation"] = relationship(
+        back_populates="payments",
+    )
