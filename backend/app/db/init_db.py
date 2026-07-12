@@ -31,6 +31,8 @@ def create_default_venue() -> None:
             name="Salón Loryan",
             capacity=80,
             base_price=2600,
+            bouncy_castle_cost=200,
+            extra_hour_price=0,
         )
 
         db.add(venue)
