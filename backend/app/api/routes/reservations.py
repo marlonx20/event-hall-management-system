@@ -145,3 +145,39 @@ def update_reservation(
         db,
         updated_reservation,
     )
+
+
+@router.put(
+    "/{reservation_id}/cancel",
+    response_model=ReservationRead,
+)
+def cancel_reservation(
+    reservation_id: int,
+    db: Annotated[Session, Depends(get_db)],
+) -> ReservationRead:
+    reservation = reservation_crud.get_reservation(
+        db,
+        reservation_id,
+    )
+
+    if reservation is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reservation not found",
+        )
+
+    try:
+        cancelled_reservation = reservation_service.cancel_reservation(
+            db,
+            reservation,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+
+    return reservation_service.build_reservation_response(
+        db,
+        cancelled_reservation,
+    )

@@ -89,3 +89,14 @@ def update_reservation(
     db.refresh(reservation)
 
     return reservation
+
+
+def cancel_reservation_manually(
+    db: Session,
+    reservation: Reservation,
+) -> Reservation:
+    reservation.status = ReservationStatus.CANCELLED
+    reservation.cancelled_at = datetime.now(UTC)
+    reservation.cancellation_reason = CancellationReason.MANUAL
+
+    return reservation
