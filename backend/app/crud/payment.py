@@ -19,8 +19,7 @@ def create_payment(
     )
 
     db.add(payment)
-    db.commit()
-    db.refresh(payment)
+    db.flush()
 
     return payment
 

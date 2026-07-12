@@ -1,9 +1,9 @@
-from datetime import date, time
+from datetime import date, datetime, time
 from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-from app.models.reservation import ReservationStatus
+from app.models.reservation import CancellationReason, ReservationStatus
 
 
 class ReservationBase(BaseModel):
@@ -34,6 +34,12 @@ class ReservationRead(ReservationBase):
     damage_charge: Decimal | None = None
 
     model_config = {"from_attributes": True}
+
+    cancelled_at: datetime | None = None
+    cancellation_reason: CancellationReason | None = None
+
+    amount_paid: Decimal = Decimal("0.00")
+    remaining_balance: Decimal = Decimal("0.00")
 
 
 class ReservationUpdate(ReservationBase):

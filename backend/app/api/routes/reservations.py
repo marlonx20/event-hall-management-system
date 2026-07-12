@@ -1,17 +1,17 @@
 from typing import Annotated
 
-from app.schemas.reservation import (
-    ReservationCreate,
-    ReservationRead,
-    ReservationUpdate,
-)
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.crud import customer as customer_crud
 from app.crud import reservation as reservation_crud
 from app.dependencies.database import get_db
-from app.models.reservation import Reservation
+from app.schemas.reservation import (
+    ReservationCreate,
+    ReservationRead,
+    ReservationUpdate,
+)
+from app.services import reservation_service
 
 router = APIRouter(
     prefix="/reservations",
@@ -27,7 +27,7 @@ router = APIRouter(
 def create_reservation(
     reservation_data: ReservationCreate,
     db: Annotated[Session, Depends(get_db)],
-) -> Reservation:
+) -> ReservationRead:
     customer = customer_crud.get_customer(
         db,
         reservation_data.customer_id,
@@ -39,7 +39,7 @@ def create_reservation(
             detail="Customer not found",
         )
 
-    existing_reservation = reservation_crud.get_active_reservation_by_date(
+    existing_reservation = reservation_crud.get_confirmed_reservation_by_date(
         db,
         reservation_data.event_date,
     )
@@ -47,27 +47,37 @@ def create_reservation(
     if existing_reservation is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="An active reservation already exists for this date",
+            detail="A confirmed reservation already exists for this date",
         )
 
-    return reservation_crud.create_reservation(
+    reservation = reservation_crud.create_reservation(
         db,
         reservation_data,
+    )
+
+    return reservation_service.build_reservation_response(
+        db,
+        reservation,
     )
 
 
 @router.get("", response_model=list[ReservationRead])
 def get_reservations(
     db: Annotated[Session, Depends(get_db)],
-) -> list[Reservation]:
-    return reservation_crud.get_reservations(db)
+) -> list[ReservationRead]:
+    reservations = reservation_crud.get_reservations(db)
+
+    return reservation_service.build_reservation_list_response(
+        db,
+        reservations,
+    )
 
 
 @router.get("/{reservation_id}", response_model=ReservationRead)
 def get_reservation(
     reservation_id: int,
     db: Annotated[Session, Depends(get_db)],
-) -> Reservation:
+) -> ReservationRead:
     reservation = reservation_crud.get_reservation(
         db,
         reservation_id,
@@ -79,7 +89,10 @@ def get_reservation(
             detail="Reservation not found",
         )
 
-    return reservation
+    return reservation_service.build_reservation_response(
+        db,
+        reservation,
+    )
 
 
 @router.put("/{reservation_id}", response_model=ReservationRead)
@@ -87,7 +100,7 @@ def update_reservation(
     reservation_id: int,
     reservation_data: ReservationUpdate,
     db: Annotated[Session, Depends(get_db)],
-) -> Reservation:
+) -> ReservationRead:
     reservation = reservation_crud.get_reservation(
         db,
         reservation_id,
@@ -110,7 +123,7 @@ def update_reservation(
             detail="Customer not found",
         )
 
-    existing_reservation = reservation_crud.get_active_reservation_by_date(
+    existing_reservation = reservation_crud.get_confirmed_reservation_by_date(
         db,
         reservation_data.event_date,
         excluded_reservation_id=reservation.id,
@@ -119,11 +132,16 @@ def update_reservation(
     if existing_reservation is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="An active reservation already exists for this date",
+            detail="A confirmed reservation already exists for this date",
         )
 
-    return reservation_crud.update_reservation(
+    updated_reservation = reservation_crud.update_reservation(
         db,
         reservation,
         reservation_data,
+    )
+
+    return reservation_service.build_reservation_response(
+        db,
+        updated_reservation,
     )

@@ -1,11 +1,15 @@
-from datetime import date
+from datetime import UTC, date, datetime
 
-from app.schemas.reservation import ReservationCreate, ReservationUpdate
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.constants import DEFAULT_VENUE_ID
-from app.models.reservation import Reservation, ReservationStatus
+from app.models.reservation import (
+    CancellationReason,
+    Reservation,
+    ReservationStatus,
+)
+from app.schemas.reservation import ReservationCreate, ReservationUpdate
 
 
 def create_reservation(
@@ -36,14 +40,14 @@ def get_reservation(
     return db.get(Reservation, reservation_id)
 
 
-def get_active_reservation_by_date(
+def get_confirmed_reservation_by_date(
     db: Session,
     event_date: date,
     excluded_reservation_id: int | None = None,
 ) -> Reservation | None:
     statement = select(Reservation).where(
         Reservation.event_date == event_date,
-        Reservation.status != ReservationStatus.CANCELLED,
+        Reservation.status == ReservationStatus.CONFIRMED,
     )
 
     if excluded_reservation_id is not None:
@@ -52,6 +56,25 @@ def get_active_reservation_by_date(
         )
 
     return db.scalar(statement)
+
+
+def cancel_other_pending_reservations(
+    db: Session,
+    confirmed_reservation: Reservation,
+) -> None:
+    statement = select(Reservation).where(
+        Reservation.event_date == confirmed_reservation.event_date,
+        Reservation.status == ReservationStatus.PENDING,
+        Reservation.id != confirmed_reservation.id,
+    )
+
+    pending_reservations = db.scalars(statement).all()
+    cancelled_at = datetime.now(UTC)
+
+    for reservation in pending_reservations:
+        reservation.status = ReservationStatus.CANCELLED
+        reservation.cancelled_at = cancelled_at
+        reservation.cancellation_reason = CancellationReason.ANOTHER_RESERVATION_CONFIRMED
 
 
 def update_reservation(

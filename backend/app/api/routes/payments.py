@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,6 +8,7 @@ from app.crud import reservation as reservation_crud
 from app.dependencies.database import get_db
 from app.models.payment import Payment
 from app.schemas.payment import PaymentCreate, PaymentRead
+from app.services import payment_service
 
 router = APIRouter(
     prefix="/reservations/{reservation_id}/payments",
@@ -37,29 +37,17 @@ def create_payment(
             detail="Reservation not found",
         )
 
-    total_paid = payment_crud.get_total_paid(
-        db,
-        reservation_id,
-    )
-
-    remaining_balance = (
-        reservation.total_price
-        + (reservation.extra_charge or Decimal("0"))
-        + (reservation.damage_charge or Decimal("0"))
-        - total_paid
-    )
-
-    if payment_data.amount > remaining_balance:
+    try:
+        return payment_service.register_payment(
+            db,
+            reservation,
+            payment_data,
+        )
+    except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Payment amount exceeds remaining balance",
-        )
-
-    return payment_crud.create_payment(
-        db,
-        reservation,
-        payment_data,
-    )
+            detail=str(error),
+        ) from error
 
 
 @router.get("", response_model=list[PaymentRead])
