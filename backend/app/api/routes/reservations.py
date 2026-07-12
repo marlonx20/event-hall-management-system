@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.crud import customer as customer_crud
 from app.crud import reservation as reservation_crud
+from app.crud import venue as venue_crud
 from app.dependencies.database import get_db
 from app.schemas.reservation import (
     ReservationCreate,
@@ -39,6 +40,17 @@ def create_reservation(
             detail="Customer not found",
         )
 
+    venue = venue_crud.get_venue(
+        db,
+        1,
+    )
+
+    if venue is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Venue configuration not found",
+        )
+
     existing_reservation = reservation_crud.get_confirmed_reservation_by_date(
         db,
         reservation_data.event_date,
@@ -50,9 +62,14 @@ def create_reservation(
             detail="A confirmed reservation already exists for this date",
         )
 
-    reservation = reservation_crud.create_reservation(
+    reservation_dict = reservation_service.prepare_reservation_create(
         db,
         reservation_data,
+    )
+
+    reservation = reservation_crud.create_reservation(
+        db,
+        reservation_dict,
     )
 
     return reservation_service.build_reservation_response(

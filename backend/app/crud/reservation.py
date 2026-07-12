@@ -3,22 +3,20 @@ from datetime import UTC, date, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.constants import DEFAULT_VENUE_ID
 from app.models.reservation import (
     CancellationReason,
     Reservation,
     ReservationStatus,
 )
-from app.schemas.reservation import ReservationCreate, ReservationUpdate
+from app.schemas.reservation import ReservationUpdate
 
 
 def create_reservation(
     db: Session,
-    reservation_data: ReservationCreate,
+    reservation_data: dict,
 ) -> Reservation:
     reservation = Reservation(
-        venue_id=DEFAULT_VENUE_ID,
-        **reservation_data.model_dump(),
+        **reservation_data,
     )
 
     db.add(reservation)
