@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from sqlalchemy.orm import Session
 
 from app.crud import payment as payment_crud
@@ -7,21 +5,7 @@ from app.crud import reservation as reservation_crud
 from app.models.payment import Payment, PaymentConcept
 from app.models.reservation import Reservation, ReservationStatus
 from app.schemas.payment import PaymentCreate
-
-
-def calculate_remaining_balance(
-    db: Session,
-    reservation: Reservation,
-) -> Decimal:
-    total_paid = payment_crud.get_total_paid(
-        db,
-        reservation.id,
-    )
-
-    extra_charge = reservation.extra_charge or Decimal("0")
-    damage_charge = reservation.damage_charge or Decimal("0")
-
-    return reservation.total_price + extra_charge + damage_charge - total_paid
+from app.services.billing_service import calculate_remaining_balance
 
 
 def register_payment(

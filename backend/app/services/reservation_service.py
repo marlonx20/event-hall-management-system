@@ -3,14 +3,15 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.core.constants import DEFAULT_VENUE_ID
-from app.crud import payment as payment_crud
 from app.crud import reservation as reservation_crud
 from app.crud import venue as venue_crud
 from app.models.reservation import Reservation, ReservationStatus
 from app.schemas.reservation import (
     ReservationCreate,
+    ReservationFinish,
     ReservationRead,
 )
+from app.services.billing_service import calculate_remaining_balance
 
 
 def calculate_total_price(
@@ -45,7 +46,6 @@ def prepare_reservation_create(
     )
 
     reservation_dict: dict[str, object] = reservation_data.model_dump()
-
     reservation_dict["venue_id"] = DEFAULT_VENUE_ID
     reservation_dict["total_price"] = total_price
 
@@ -56,15 +56,18 @@ def build_reservation_response(
     db: Session,
     reservation: Reservation,
 ) -> ReservationRead:
-    amount_paid = payment_crud.get_total_paid(
+    remaining_balance = calculate_remaining_balance(
         db,
-        reservation.id,
+        reservation,
     )
 
-    extra_charge = reservation.extra_charge or Decimal("0")
-    damage_charge = reservation.damage_charge or Decimal("0")
+    total_charges = (
+        reservation.total_price
+        + (reservation.extra_charge or Decimal("0"))
+        + (reservation.damage_charge or Decimal("0"))
+    )
 
-    remaining_balance = reservation.total_price + extra_charge + damage_charge - amount_paid
+    amount_paid = total_charges - remaining_balance
 
     reservation_response = ReservationRead.model_validate(
         reservation,
@@ -111,6 +114,52 @@ def cancel_reservation(
         db.refresh(cancelled_reservation)
 
         return cancelled_reservation
+
+    except Exception:
+        db.rollback()
+        raise
+
+
+def finish_reservation(
+    db: Session,
+    reservation: Reservation,
+    finish_data: ReservationFinish,
+) -> Reservation:
+    if reservation.status != ReservationStatus.CONFIRMED:
+        raise ValueError("Only confirmed reservations can be finished")
+
+    venue = venue_crud.get_venue(
+        db,
+        reservation.venue_id,
+    )
+
+    if venue is None:
+        raise ValueError("Venue configuration not found")
+
+    extra_charge = finish_data.extra_hours * venue.extra_hour_price
+
+    try:
+        finished_reservation = reservation_crud.finish_reservation(
+            reservation=reservation,
+            extra_hours=finish_data.extra_hours,
+            extra_charge=extra_charge,
+            damage_description=finish_data.damage_description,
+            damage_charge=finish_data.damage_charge,
+            final_comments=finish_data.final_comments,
+        )
+
+        remaining_balance = calculate_remaining_balance(
+            db,
+            finished_reservation,
+        )
+
+        if remaining_balance != Decimal("0.00"):
+            raise ValueError("Reservation cannot be finished until the balance is fully paid")
+
+        db.commit()
+        db.refresh(finished_reservation)
+
+        return finished_reservation
 
     except Exception:
         db.rollback()

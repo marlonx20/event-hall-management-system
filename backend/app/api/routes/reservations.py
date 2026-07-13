@@ -9,6 +9,7 @@ from app.crud import venue as venue_crud
 from app.dependencies.database import get_db
 from app.schemas.reservation import (
     ReservationCreate,
+    ReservationFinish,
     ReservationRead,
     ReservationUpdate,
 )
@@ -197,4 +198,42 @@ def cancel_reservation(
     return reservation_service.build_reservation_response(
         db,
         cancelled_reservation,
+    )
+
+
+@router.put(
+    "/{reservation_id}/finish",
+    response_model=ReservationRead,
+)
+def finish_reservation(
+    reservation_id: int,
+    finish_data: ReservationFinish,
+    db: Annotated[Session, Depends(get_db)],
+) -> ReservationRead:
+    reservation = reservation_crud.get_reservation(
+        db,
+        reservation_id,
+    )
+
+    if reservation is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reservation not found",
+        )
+
+    try:
+        finished_reservation = reservation_service.finish_reservation(
+            db,
+            reservation,
+            finish_data,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(error),
+        ) from error
+
+    return reservation_service.build_reservation_response(
+        db,
+        finished_reservation,
     )

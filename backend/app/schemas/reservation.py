@@ -44,3 +44,20 @@ class ReservationRead(ReservationBase):
     remaining_balance: Decimal = Decimal("0.00")
 
     model_config = {"from_attributes": True}
+
+
+class ReservationFinish(BaseModel):
+    extra_hours: Decimal = Field(
+        default=Decimal("0.00"),
+        ge=0,
+        max_digits=5,
+        decimal_places=2,
+    )
+    damage_description: str | None = None
+    damage_charge: Decimal = Field(
+        default=Decimal("0.00"),
+        ge=0,
+        max_digits=10,
+        decimal_places=2,
+    )
+    final_comments: str | None = None

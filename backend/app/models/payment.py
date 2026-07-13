@@ -20,10 +20,9 @@ class PaymentMethod(StrEnum):
 
 class PaymentConcept(StrEnum):
     DEPOSIT = "deposit"
-    SETTLEMENT = "settlement"
+    FINAL_PAYMENT = "final_payment"
     EXTRA_HOURS = "extra_hours"
     DAMAGES = "damages"
-    OTHER = "other"
 
 
 class Payment(Base):
