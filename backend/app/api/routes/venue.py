@@ -8,6 +8,7 @@ from app.crud import venue as venue_crud
 from app.dependencies.database import get_db
 from app.models.venue import Venue
 from app.schemas.venue import VenueRead, VenueUpdate
+from app.services import venue_service
 
 router = APIRouter(
     prefix="/venue",
@@ -49,7 +50,7 @@ def update_venue(
             detail="Venue not found",
         )
 
-    return venue_crud.update_venue(
+    return venue_service.update_venue(
         db,
         venue,
         venue_data,

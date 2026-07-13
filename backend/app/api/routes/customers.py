@@ -7,6 +7,7 @@ from app.crud import customer as customer_crud
 from app.dependencies.database import get_db
 from app.models.customer import Customer
 from app.schemas.customer import CustomerCreate, CustomerRead, CustomerUpdate
+from app.services import customer_service
 
 router = APIRouter(prefix="/customers", tags=["Customers"])
 
@@ -20,7 +21,7 @@ def create_customer(
     customer_data: CustomerCreate,
     db: Annotated[Session, Depends(get_db)],
 ) -> Customer:
-    return customer_crud.create_customer(db, customer_data)
+    return customer_service.create_customer(db, customer_data)
 
 
 @router.get("", response_model=list[CustomerRead])
@@ -60,7 +61,7 @@ def update_customer(
             detail="Customer not found",
         )
 
-    return customer_crud.update_customer(
+    return customer_service.update_customer(
         db,
         customer,
         customer_data,

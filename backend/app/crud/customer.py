@@ -12,8 +12,7 @@ def create_customer(
     customer = Customer(**customer_data.model_dump())
 
     db.add(customer)
-    db.commit()
-    db.refresh(customer)
+    db.flush()
 
     return customer
 
@@ -31,7 +30,6 @@ def get_customer(
 
 
 def update_customer(
-    db: Session,
     customer: Customer,
     customer_data: CustomerUpdate,
 ) -> Customer:
@@ -39,8 +37,5 @@ def update_customer(
 
     for field, value in update_data.items():
         setattr(customer, field, value)
-
-    db.commit()
-    db.refresh(customer)
 
     return customer

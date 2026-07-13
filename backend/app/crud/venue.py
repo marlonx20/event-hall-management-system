@@ -12,14 +12,12 @@ def get_venue(
 
 
 def update_venue(
-    db: Session,
     venue: Venue,
     venue_data: VenueUpdate,
 ) -> Venue:
-    for field, value in venue_data.model_dump().items():
-        setattr(venue, field, value)
+    update_data = venue_data.model_dump()
 
-    db.commit()
-    db.refresh(venue)
+    for field, value in update_data.items():
+        setattr(venue, field, value)
 
     return venue
