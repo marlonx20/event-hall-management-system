@@ -10,14 +10,15 @@ from app.schemas.reservation import (
     ReservationCreate,
     ReservationFinish,
     ReservationRead,
+    ReservationUpdate,
 )
 from app.services.billing_service import calculate_remaining_balance
 
 
 def calculate_total_price(
+    db: Session,
     has_bouncy_castle: bool,
     venue_id: int,
-    db: Session,
 ) -> Decimal:
     venue = venue_crud.get_venue(
         db,
@@ -40,9 +41,9 @@ def prepare_reservation_create(
     reservation_data: ReservationCreate,
 ) -> dict[str, object]:
     total_price = calculate_total_price(
-        reservation_data.has_bouncy_castle,
-        DEFAULT_VENUE_ID,
-        db,
+        db=db,
+        has_bouncy_castle=reservation_data.has_bouncy_castle,
+        venue_id=DEFAULT_VENUE_ID,
     )
 
     reservation_dict: dict[str, object] = reservation_data.model_dump()
@@ -94,6 +95,58 @@ def build_reservation_list_response(
     ]
 
 
+def update_reservation(
+    db: Session,
+    reservation: Reservation,
+    reservation_data: ReservationUpdate,
+) -> Reservation:
+    if reservation.status == ReservationStatus.CANCELLED:
+        raise ValueError("A cancelled reservation cannot be updated")
+
+    if reservation.status == ReservationStatus.FINISHED:
+        raise ValueError("A finished reservation cannot be updated")
+
+    update_data: dict[str, object] = reservation_data.model_dump(
+        exclude_unset=True,
+    )
+
+    has_bouncy_castle = update_data.get("has_bouncy_castle")
+
+    if has_bouncy_castle is not None:
+        update_data["total_price"] = calculate_total_price(
+            db=db,
+            has_bouncy_castle=bool(has_bouncy_castle),
+            venue_id=reservation.venue_id,
+        )
+
+    if "extra_hours" in update_data:
+        venue = venue_crud.get_venue(
+            db,
+            reservation.venue_id,
+        )
+
+        if venue is None:
+            raise ValueError("Venue configuration not found")
+
+        extra_hours = update_data["extra_hours"]
+
+        if extra_hours is None:
+            update_data["extra_hours"] = Decimal("0.00")
+            update_data["extra_charge"] = Decimal("0.00")
+        else:
+            update_data["extra_charge"] = Decimal(str(extra_hours)) * venue.extra_hour_price
+
+    try:
+        return reservation_crud.update_reservation(
+            db,
+            reservation,
+            update_data,
+        )
+    except Exception:
+        db.rollback()
+        raise
+
+
 def cancel_reservation(
     db: Session,
     reservation: Reservation,
@@ -128,33 +181,19 @@ def finish_reservation(
     if reservation.status != ReservationStatus.CONFIRMED:
         raise ValueError("Only confirmed reservations can be finished")
 
-    venue = venue_crud.get_venue(
+    remaining_balance = calculate_remaining_balance(
         db,
-        reservation.venue_id,
+        reservation,
     )
 
-    if venue is None:
-        raise ValueError("Venue configuration not found")
-
-    extra_charge = finish_data.extra_hours * venue.extra_hour_price
+    if remaining_balance != Decimal("0.00"):
+        raise ValueError("Reservation cannot be finished until the balance is fully paid")
 
     try:
         finished_reservation = reservation_crud.finish_reservation(
             reservation=reservation,
-            extra_hours=finish_data.extra_hours,
-            extra_charge=extra_charge,
-            damage_description=finish_data.damage_description,
-            damage_charge=finish_data.damage_charge,
             final_comments=finish_data.final_comments,
         )
-
-        remaining_balance = calculate_remaining_balance(
-            db,
-            finished_reservation,
-        )
-
-        if remaining_balance != Decimal("0.00"):
-            raise ValueError("Reservation cannot be finished until the balance is fully paid")
 
         db.commit()
         db.refresh(finished_reservation)

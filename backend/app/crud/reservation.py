@@ -1,5 +1,4 @@
 from datetime import UTC, date, datetime
-from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -9,16 +8,13 @@ from app.models.reservation import (
     Reservation,
     ReservationStatus,
 )
-from app.schemas.reservation import ReservationUpdate
 
 
 def create_reservation(
     db: Session,
-    reservation_data: dict,
+    reservation_data: dict[str, object],
 ) -> Reservation:
-    reservation = Reservation(
-        **reservation_data,
-    )
+    reservation = Reservation(**reservation_data)
 
     db.add(reservation)
     db.commit()
@@ -27,8 +23,14 @@ def create_reservation(
     return reservation
 
 
-def get_reservations(db: Session) -> list[Reservation]:
-    statement = select(Reservation).order_by(Reservation.event_date)
+def get_reservations(
+    db: Session,
+) -> list[Reservation]:
+    statement = select(Reservation).order_by(
+        Reservation.event_date,
+        Reservation.start_time,
+    )
+
     return list(db.scalars(statement).all())
 
 
@@ -79,9 +81,9 @@ def cancel_other_pending_reservations(
 def update_reservation(
     db: Session,
     reservation: Reservation,
-    reservation_data: ReservationUpdate,
+    update_data: dict[str, object],
 ) -> Reservation:
-    for field, value in reservation_data.model_dump().items():
+    for field, value in update_data.items():
         setattr(reservation, field, value)
 
     db.commit()
@@ -103,16 +105,8 @@ def cancel_reservation_manually(
 
 def finish_reservation(
     reservation: Reservation,
-    extra_hours: Decimal,
-    extra_charge: Decimal,
-    damage_description: str | None,
-    damage_charge: Decimal,
     final_comments: str | None,
 ) -> Reservation:
-    reservation.extra_hours = extra_hours
-    reservation.extra_charge = extra_charge
-    reservation.damage_description = damage_description
-    reservation.damage_charge = damage_charge
     reservation.final_comments = final_comments
     reservation.status = ReservationStatus.FINISHED
 

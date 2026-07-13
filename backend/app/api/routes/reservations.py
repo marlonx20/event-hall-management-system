@@ -130,34 +130,42 @@ def update_reservation(
             detail="Reservation not found",
         )
 
-    customer = customer_crud.get_customer(
-        db,
-        reservation_data.customer_id,
-    )
-
-    if customer is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Customer not found",
+    if reservation_data.customer_id is not None:
+        customer = customer_crud.get_customer(
+            db,
+            reservation_data.customer_id,
         )
 
-    existing_reservation = reservation_crud.get_confirmed_reservation_by_date(
-        db,
-        reservation_data.event_date,
-        excluded_reservation_id=reservation.id,
-    )
+        if customer is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Customer not found",
+            )
 
-    if existing_reservation is not None:
+    if reservation_data.event_date is not None:
+        existing_reservation = reservation_crud.get_confirmed_reservation_by_date(
+            db,
+            reservation_data.event_date,
+            excluded_reservation_id=reservation.id,
+        )
+
+        if existing_reservation is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A confirmed reservation already exists for this date",
+            )
+
+    try:
+        updated_reservation = reservation_service.update_reservation(
+            db,
+            reservation,
+            reservation_data,
+        )
+    except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="A confirmed reservation already exists for this date",
-        )
-
-    updated_reservation = reservation_crud.update_reservation(
-        db,
-        reservation,
-        reservation_data,
-    )
+            detail=str(error),
+        ) from error
 
     return reservation_service.build_reservation_response(
         db,
