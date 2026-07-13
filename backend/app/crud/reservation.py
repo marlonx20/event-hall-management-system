@@ -8,6 +8,7 @@ from app.models.reservation import (
     Reservation,
     ReservationStatus,
 )
+from app.utils.date_utils import get_next_month_start
 
 
 def create_reservation(
@@ -111,3 +112,26 @@ def finish_reservation(
     reservation.status = ReservationStatus.FINISHED
 
     return reservation
+
+
+def get_reservations_by_month(
+    db: Session,
+    year: int,
+    month: int,
+) -> list[Reservation]:
+    month_start = date(year, month, 1)
+    next_month_start = get_next_month_start(year, month)
+
+    statement = (
+        select(Reservation)
+        .where(
+            Reservation.event_date >= month_start,
+            Reservation.event_date < next_month_start,
+        )
+        .order_by(
+            Reservation.event_date,
+            Reservation.start_time,
+        )
+    )
+
+    return list(db.scalars(statement).all())
