@@ -23,3 +23,7 @@ __pycache__/
 
 #SQLite database
 *.db
+
+#Uploaded files
+storage/photos*
+!storage/photos/.gitkeep
