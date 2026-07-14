@@ -11,6 +11,7 @@ dependencies = [
     "alembic",
     "psycopg[binary]",
     "pydantic-settings",
+    "python-multipart",
 ]
 
 [project.optional-dependencies]
@@ -37,3 +38,4 @@ pythonpath = ["."]
 [tool.setuptools.packages.find]
 include = ["app*"]
 exclude = ["alembic*"]
+

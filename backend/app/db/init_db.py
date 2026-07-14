@@ -2,6 +2,7 @@ from sqlalchemy import select
 
 import app.models.customer as _customer
 import app.models.payment as _payment
+import app.models.photo as _photo
 import app.models.reservation as _reservation
 import app.models.task as _task
 import app.models.venue as _venue
@@ -13,6 +14,7 @@ from app.models.venue import Venue
 __all__ = [
     "_customer",
     "_payment",
+    "_photo",
     "_reservation",
     "_task",
     "_venue",
