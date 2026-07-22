@@ -1,5 +1,7 @@
+import AppRouter from "./router/AppRouter";
+
 function App() {
-  return <h1>Salon de Eventos Manager</h1>;
+  return <AppRouter />;
 }
 
 export default App;

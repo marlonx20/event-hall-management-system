@@ -18,19 +18,43 @@ def register_payment(
         reservation,
     )
 
-    if payment_data.amount > remaining_balance:
-        raise ValueError("Payment amount exceeds remaining balance")
-
     if reservation.status == ReservationStatus.CANCELLED:
         raise ValueError("Cannot register a payment for a cancelled reservation")
 
     if reservation.status == ReservationStatus.FINISHED:
         raise ValueError("Cannot register a payment for a finished reservation")
 
+    if reservation.status == ReservationStatus.PENDING and payment_data.concept in {
+        PaymentConcept.EXTRA_HOURS,
+        PaymentConcept.DAMAGES,
+    }:
+        raise ValueError("Extra hours and damage payments require a confirmed reservation")
+
+    existing_payments = payment_crud.get_payments_by_reservation(
+        db,
+        reservation.id,
+    )
+
+    has_deposit = any(payment.concept == PaymentConcept.DEPOSIT for payment in existing_payments)
+
+    if payment_data.concept == PaymentConcept.DEPOSIT and has_deposit:
+        raise ValueError("A deposit has already been registered for this reservation")
+
+    if payment_data.amount > remaining_balance:
+        raise ValueError("Payment amount exceeds remaining balance")
+
     if (
-        payment_data.concept == PaymentConcept.DEPOSIT
-        and reservation.status == ReservationStatus.PENDING
+        payment_data.concept == PaymentConcept.FINAL_PAYMENT
+        and payment_data.amount != remaining_balance
     ):
+        raise ValueError("Final payment must cover the entire remaining balance")
+
+    should_confirm = reservation.status == ReservationStatus.PENDING and payment_data.concept in {
+        PaymentConcept.DEPOSIT,
+        PaymentConcept.FINAL_PAYMENT,
+    }
+
+    if should_confirm:
         confirmed_reservation = reservation_crud.get_confirmed_reservation_by_date(
             db,
             reservation.event_date,
@@ -47,10 +71,7 @@ def register_payment(
             payment_data,
         )
 
-        if (
-            payment_data.concept == PaymentConcept.DEPOSIT
-            and reservation.status == ReservationStatus.PENDING
-        ):
+        if should_confirm:
             reservation.status = ReservationStatus.CONFIRMED
 
             reservation_crud.cancel_other_pending_reservations(

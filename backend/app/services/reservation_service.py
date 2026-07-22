@@ -47,6 +47,7 @@ def prepare_reservation_create(
     )
 
     reservation_dict: dict[str, object] = reservation_data.model_dump()
+
     reservation_dict["venue_id"] = DEFAULT_VENUE_ID
     reservation_dict["total_price"] = total_price
 
@@ -78,7 +79,7 @@ def build_reservation_response(
         update={
             "amount_paid": amount_paid,
             "remaining_balance": remaining_balance,
-        }
+        },
     )
 
 
@@ -101,21 +102,29 @@ def update_reservation(
     reservation_data: ReservationUpdate,
 ) -> Reservation:
     if reservation.status == ReservationStatus.CANCELLED:
-        raise ValueError("A cancelled reservation cannot be updated")
+        raise ValueError(
+            "A cancelled reservation cannot be updated",
+        )
 
     if reservation.status == ReservationStatus.FINISHED:
-        raise ValueError("A finished reservation cannot be updated")
+        raise ValueError(
+            "A finished reservation cannot be updated",
+        )
 
     update_data: dict[str, object] = reservation_data.model_dump(
         exclude_unset=True,
     )
 
-    has_bouncy_castle = update_data.get("has_bouncy_castle")
+    has_bouncy_castle = update_data.get(
+        "has_bouncy_castle",
+    )
 
     if has_bouncy_castle is not None:
         update_data["total_price"] = calculate_total_price(
             db=db,
-            has_bouncy_castle=bool(has_bouncy_castle),
+            has_bouncy_castle=bool(
+                has_bouncy_castle,
+            ),
             venue_id=reservation.venue_id,
         )
 
@@ -126,15 +135,64 @@ def update_reservation(
         )
 
         if venue is None:
-            raise ValueError("Venue configuration not found")
+            raise ValueError(
+                "Venue configuration not found",
+            )
 
         extra_hours = update_data["extra_hours"]
 
         if extra_hours is None:
             update_data["extra_hours"] = Decimal("0.00")
+
             update_data["extra_charge"] = Decimal("0.00")
         else:
             update_data["extra_charge"] = Decimal(str(extra_hours)) * venue.extra_hour_price
+
+    proposed_extra_charge = Decimal(
+        str(
+            update_data.get(
+                "extra_charge",
+                reservation.extra_charge or Decimal("0"),
+            )
+        )
+    )
+
+    proposed_damage_charge = Decimal(
+        str(
+            update_data.get(
+                "damage_charge",
+                reservation.damage_charge or Decimal("0"),
+            )
+        )
+    )
+
+    current_remaining_balance = calculate_remaining_balance(
+        db,
+        reservation,
+    )
+
+    total_paid = (
+        reservation.total_price
+        + (reservation.extra_charge or Decimal("0"))
+        + (reservation.damage_charge or Decimal("0"))
+        - current_remaining_balance
+    )
+
+    proposed_total_price = Decimal(
+        str(
+            update_data.get(
+                "total_price",
+                reservation.total_price,
+            )
+        )
+    )
+
+    proposed_total = proposed_total_price + proposed_extra_charge + proposed_damage_charge
+
+    if proposed_total < total_paid:
+        raise ValueError(
+            "Additional charges cannot be reduced below the amount already paid",
+        )
 
     try:
         return reservation_crud.update_reservation(
@@ -152,10 +210,14 @@ def cancel_reservation(
     reservation: Reservation,
 ) -> Reservation:
     if reservation.status == ReservationStatus.CANCELLED:
-        raise ValueError("Reservation is already cancelled")
+        raise ValueError(
+            "Reservation is already cancelled",
+        )
 
     if reservation.status == ReservationStatus.FINISHED:
-        raise ValueError("A finished reservation cannot be cancelled")
+        raise ValueError(
+            "A finished reservation cannot be cancelled",
+        )
 
     try:
         cancelled_reservation = reservation_crud.cancel_reservation_manually(
@@ -164,7 +226,9 @@ def cancel_reservation(
         )
 
         db.commit()
-        db.refresh(cancelled_reservation)
+        db.refresh(
+            cancelled_reservation,
+        )
 
         return cancelled_reservation
 
@@ -179,7 +243,9 @@ def finish_reservation(
     finish_data: ReservationFinish,
 ) -> Reservation:
     if reservation.status != ReservationStatus.CONFIRMED:
-        raise ValueError("Only confirmed reservations can be finished")
+        raise ValueError(
+            "Only confirmed reservations can be finished",
+        )
 
     remaining_balance = calculate_remaining_balance(
         db,
@@ -187,16 +253,20 @@ def finish_reservation(
     )
 
     if remaining_balance != Decimal("0.00"):
-        raise ValueError("Reservation cannot be finished until the balance is fully paid")
+        raise ValueError(
+            "Reservation cannot be finished until the balance is fully paid",
+        )
 
     try:
         finished_reservation = reservation_crud.finish_reservation(
             reservation=reservation,
-            final_comments=finish_data.final_comments,
+            final_comments=(finish_data.final_comments),
         )
 
         db.commit()
-        db.refresh(finished_reservation)
+        db.refresh(
+            finished_reservation,
+        )
 
         return finished_reservation
 

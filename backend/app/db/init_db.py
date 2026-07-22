@@ -3,6 +3,7 @@ from sqlalchemy import select
 import app.models.customer as _customer
 import app.models.payment as _payment
 import app.models.photo as _photo
+import app.models.quick_message as _quick_message
 import app.models.reservation as _reservation
 import app.models.task as _task
 import app.models.venue as _venue
@@ -16,6 +17,7 @@ __all__ = [
     "_payment",
     "_photo",
     "_reservation",
+    "_quick_message",
     "_task",
     "_venue",
 ]
