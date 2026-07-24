@@ -1,8 +1,8 @@
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from alembic import context
 from app.db.base import Base
 from app.models import (
     customer,
@@ -13,7 +13,6 @@ from app.models import (
     task,
     venue,
 )
-
 # Estos módulos deben importarse para registrar todos los modelos
 # dentro de Base.metadata antes de ejecutar las migraciones.
 MODEL_MODULES = (

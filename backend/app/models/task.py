@@ -61,7 +61,6 @@ class Task(Base):
         ),
         nullable=False,
         default=TaskPriority.MEDIUM,
-        server_default=TaskPriority.MEDIUM.value,
     )
 
     status: Mapped[TaskStatus] = mapped_column(
@@ -72,7 +71,6 @@ class Task(Base):
         ),
         nullable=False,
         default=TaskStatus.PENDING,
-        server_default=TaskStatus.PENDING.value,
     )
 
     assigned_to: Mapped[str | None] = mapped_column(
