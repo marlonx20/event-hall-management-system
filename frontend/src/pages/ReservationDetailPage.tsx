@@ -5,6 +5,7 @@ import ReservationActionsCard from "../components/reservations/ReservationAction
 import ReservationDialogs from "../components/reservations/ReservationDialogs";
 import EventInformationCard from "../components/reservations/EventInformationCard";
 import CustomerInformationCard from "../components/reservations/CustomerInformationCard";
+import ReservationStatusBadge from "../components/reservations/ReservationStatusBadge";
 
 import { useVenue } from "../hooks/useVenue";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -15,7 +16,6 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   Divider,
   Grid,
@@ -27,7 +27,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { useCustomers } from "../hooks/useCustomers";
 import { useReservation } from "../hooks/useReservation";
-import type { Reservation } from "../types/reservation";
+
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-MX", {
@@ -36,34 +36,6 @@ function formatDate(value: string): string {
     month: "long",
     year: "numeric",
   }).format(new Date(`${value}T00:00:00`));
-}
-
-function getStatusLabel(status: Reservation["status"]): string {
-  switch (status) {
-    case "confirmed":
-      return "Confirmada";
-    case "finished":
-      return "Finalizada";
-    case "cancelled":
-      return "Cancelada";
-    default:
-      return "Pendiente";
-  }
-}
-
-function getStatusColor(
-  status: Reservation["status"],
-): "success" | "error" | "warning" | "default" {
-  switch (status) {
-    case "confirmed":
-      return "success";
-    case "finished":
-      return "default";
-    case "cancelled":
-      return "error";
-    default:
-      return "warning";
-  }
 }
 
 function ReservationDetailPage() {
@@ -176,11 +148,7 @@ function ReservationDetailPage() {
           </Typography>
         </Box>
 
-        <Chip
-          label={getStatusLabel(reservation.status)}
-          color={getStatusColor(reservation.status)}
-          variant="outlined"
-        />
+        <ReservationStatusBadge status={reservation.status} />
 
         <Button
           variant="outlined"

@@ -14,14 +14,22 @@ if TYPE_CHECKING:
 
 class TaskStatus(StrEnum):
     PENDING = "pending"
-    IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
+
+
+class TaskPriority(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 
 class Task(Base):
     __tablename__ = "tasks"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+    )
 
     venue_id: Mapped[int] = mapped_column(
         ForeignKey("venues.id"),
@@ -45,6 +53,17 @@ class Task(Base):
         index=True,
     )
 
+    priority: Mapped[TaskPriority] = mapped_column(
+        SqlEnum(
+            TaskPriority,
+            name="task_priority",
+            native_enum=False,
+        ),
+        nullable=False,
+        default=TaskPriority.MEDIUM,
+        server_default=TaskPriority.MEDIUM.value,
+    )
+
     status: Mapped[TaskStatus] = mapped_column(
         SqlEnum(
             TaskStatus,
@@ -53,6 +72,7 @@ class Task(Base):
         ),
         nullable=False,
         default=TaskStatus.PENDING,
+        server_default=TaskStatus.PENDING.value,
     )
 
     assigned_to: Mapped[str | None] = mapped_column(

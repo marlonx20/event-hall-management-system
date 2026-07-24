@@ -9,8 +9,11 @@ import {
 } from "@mui/material";
 import { isAxiosError } from "axios";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-
+import {
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+import dayjs from "dayjs";
 import AdditionalInfoSection from "../components/reservations/AdditionalInfoSection";
 import CustomerSection from "../components/reservations/CustomerSection";
 import EventSection from "../components/reservations/EventSection";
@@ -31,13 +34,31 @@ import {
 function NewReservationPage() {
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams();
+
+const dateFromCalendar =
+  searchParams.get("date");
+
+const initialEventDate =
+  dateFromCalendar &&
+  dayjs(
+    dateFromCalendar,
+    "YYYY-MM-DD",
+    true,
+  ).isValid()
+    ? dayjs(dateFromCalendar)
+    : null;
+
   const createReservationMutation =
     useCreateReservation();
 
   const [formData, setFormData] =
-    useState<ReservationFormData>(
-      initialReservationFormData,
-    );
+  useState<ReservationFormData>(() => ({
+    ...initialReservationFormData,
+    eventDate:
+      initialEventDate ??
+      initialReservationFormData.eventDate,
+  }));
 
   const [validationErrors, setValidationErrors] =
     useState<string[]>([]);

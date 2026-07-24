@@ -24,6 +24,10 @@ dev = [
 line-length = 100
 target-version = "py312"
 
+exclude = [
+    "alembic",
+]
+
 [tool.ruff.lint]
 select = [
     "E",
@@ -38,4 +42,3 @@ pythonpath = ["."]
 [tool.setuptools.packages.find]
 include = ["app*"]
 exclude = ["alembic*"]
-

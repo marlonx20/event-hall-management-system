@@ -2,53 +2,102 @@ import {
   Alert,
   Box,
   Button,
-  Card,
-  InputAdornment,
-  CardContent,
+  CircularProgress,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
 
+import VenueInformationCard from "../components/settings/VenueInformationCard";
+import BankInformationCard from "../components/settings/BankInformationCard";
+import SocialMediaCard from "../components/settings/SocialMediaCard";
+import VenuePricesCard from "../components/settings/VenuePricesCard";
+import VenueScheduleCard from "../components/settings/VenueScheduleCard";
 import { useVenue } from "../hooks/useVenue";
-import { useUpdateVenue } from "../hooks/useUpdateVenue";
+import type { Venue, VenueUpdate } from "../types/venue";
+
+function buildVenueUpdate(
+  venue: Venue,
+  changes: Partial<VenueUpdate>,
+): VenueUpdate {
+  return {
+    name: venue.name,
+    address: venue.address,
+    phone: venue.phone,
+    capacity: venue.capacity,
+
+    opening_time: venue.opening_time,
+    closing_time: venue.closing_time,
+
+    facebook_url: venue.facebook_url,
+    whatsapp_number: venue.whatsapp_number,
+    instagram_url: venue.instagram_url,
+    website_url: venue.website_url,
+
+    base_price: Number(venue.base_price),
+    bouncy_castle_cost: Number(venue.bouncy_castle_cost),
+    extra_hour_price: Number(venue.extra_hour_price),
+
+    bank_name: venue.bank_name,
+    bank_account_holder: venue.bank_account_holder,
+    bank_account_number: venue.bank_account_number,
+    bank_clabe: venue.bank_clabe,
+
+    facebook_response_message: venue.facebook_response_message,
+    banking_information_message: venue.banking_information_message,
+    location_message: venue.location_message,
+    venue_rules_message: venue.venue_rules_message,
+    payment_reminder_message: venue.payment_reminder_message,
+    thank_you_message: venue.thank_you_message,
+    general_notes: venue.general_notes,
+
+    ...changes,
+  };
+}
 
 function SettingsPage() {
-  const { data: venue, isLoading } = useVenue();
+  const { data: venue, isLoading, isError, refetch } = useVenue();
 
-  const updateVenueMutation = useUpdateVenue();
-
-  const [basePrice, setBasePrice] = useState("");
-
-  const [bouncyCastleCost, setBouncyCastleCost] = useState("");
-
-  const [extraHourPrice, setExtraHourPrice] = useState("");
-
-  const hasChanges =
-    venue !== undefined &&
-    (basePrice !== venue.base_price ||
-      bouncyCastleCost !== venue.bouncy_castle_cost ||
-      extraHourPrice !== venue.extra_hour_price);
-
-  useEffect(() => {
-    if (!venue) {
-      return;
-    }
-
-    setBasePrice(venue.base_price);
-    setBouncyCastleCost(venue.bouncy_castle_cost);
-    setExtraHourPrice(venue.extra_hour_price);
-  }, [venue]);
-
-  if (isLoading || !venue) {
-    return <>Cargando...</>;
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          minHeight: 350,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
+
+  if (isError || !venue) {
+    return (
+      <Alert
+        severity="error"
+        action={
+          <Button
+            color="inherit"
+            size="small"
+            onClick={() => {
+              void refetch();
+            }}
+          >
+            Reintentar
+          </Button>
+        }
+      >
+        No fue posible cargar la configuración.
+      </Alert>
+    );
+  }
+  const currentVenue = venue;
 
   return (
     <Box
       sx={{
-        maxWidth: 700,
+        maxWidth: 900,
       }}
     >
       <Typography
@@ -61,91 +110,29 @@ function SettingsPage() {
         Configuración
       </Typography>
 
-      <Card>
-        <CardContent>
-          <Typography
-            variant="h6"
-            sx={{
-              mb: 3,
-              fontWeight: 700,
-            }}
-          >
-            Precios
-          </Typography>
+      <Stack spacing={3}>
+        <VenueInformationCard
+          venue={currentVenue}
+          buildVenueUpdate={buildVenueUpdate}
+        />
 
-          <Stack spacing={3}>
-            <TextField
-              label="Precio base"
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
-                  ),
-                },
-              }}
-              type="number"
-              value={basePrice}
-              onChange={(event) => setBasePrice(event.target.value)}
-            />
-
-            <TextField
-              label="Costo del brincolín"
-              type="number"
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
-                  ),
-                },
-              }}
-              value={bouncyCastleCost}
-              onChange={(event) => setBouncyCastleCost(event.target.value)}
-            />
-
-            <TextField
-              label="Precio por hora extra"
-              type="number"
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">$</InputAdornment>
-                  ),
-                },
-              }}
-              value={extraHourPrice}
-              onChange={(event) => setExtraHourPrice(event.target.value)}
-            />
-
-            {updateVenueMutation.isError && (
-              <Alert severity="error">No fue posible guardar.</Alert>
-            )}
-
-            {updateVenueMutation.isSuccess && (
-              <Alert severity="success">Configuración guardada.</Alert>
-            )}
-
-            <Button
-              variant="contained"
-              disabled={!hasChanges || updateVenueMutation.isPending}
-              onClick={() => {
-                updateVenueMutation.mutate({
-                  ...venue,
-
-                  base_price: Number(basePrice),
-
-                  bouncy_castle_cost: Number(bouncyCastleCost),
-
-                  extra_hour_price: Number(extraHourPrice),
-                });
-              }}
-            >
-              {updateVenueMutation.isPending
-                ? "Guardando..."
-                : "Guardar cambios"}
-            </Button>
-          </Stack>
-        </CardContent>
-      </Card>
+        <VenuePricesCard
+          venue={currentVenue}
+          buildVenueUpdate={buildVenueUpdate}
+        />
+        <VenueScheduleCard
+          venue={currentVenue}
+          buildVenueUpdate={buildVenueUpdate}
+        />
+        <BankInformationCard
+          venue={currentVenue}
+          buildVenueUpdate={buildVenueUpdate}
+        />
+        <SocialMediaCard
+          venue={currentVenue}
+          buildVenueUpdate={buildVenueUpdate}
+        />
+      </Stack>
     </Box>
   );
 }

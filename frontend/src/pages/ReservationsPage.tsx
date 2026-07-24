@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   Grid,
   Snackbar,
@@ -13,14 +12,12 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import {
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { useCustomers } from "../hooks/useCustomers";
+import ReservationStatusBadge from "../components/reservations/ReservationStatusBadge";
 import { useReservations } from "../hooks/useReservations";
-import type { Reservation } from "../types/reservation";
+
 
 interface LocationState {
   successMessage?: string;
@@ -55,57 +52,16 @@ function formatTime(value: string): string {
   }).format(date);
 }
 
-function getStatusLabel(
-  status: Reservation["status"],
-): string {
-  switch (status) {
-    case "confirmed":
-      return "Confirmada";
-
-    case "finished":
-      return "Finalizada";
-
-    case "cancelled":
-      return "Cancelada";
-
-    default:
-      return "Pendiente";
-  }
-}
-
-function getStatusColor(
-  status: Reservation["status"],
-):
-  | "success"
-  | "error"
-  | "warning"
-  | "default" {
-  switch (status) {
-    case "confirmed":
-      return "success";
-
-    case "finished":
-      return "default";
-
-    case "cancelled":
-      return "error";
-
-    default:
-      return "warning";
-  }
-}
 
 function ReservationsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const locationState =
-    location.state as LocationState | null;
+  const locationState = location.state as LocationState | null;
 
-  const [successMessage, setSuccessMessage] =
-    useState(
-      locationState?.successMessage ?? "",
-    );
+  const [successMessage, setSuccessMessage] = useState(
+    locationState?.successMessage ?? "",
+  );
 
   const {
     data: reservations = [],
@@ -115,57 +71,49 @@ function ReservationsPage() {
   } = useReservations();
 
   const sortedReservations = [...reservations].sort(
-  (firstReservation, secondReservation) => {
-    const firstIsInactive =
-      firstReservation.status === "cancelled" ||
-      firstReservation.status === "finished";
+    (firstReservation, secondReservation) => {
+      const firstIsInactive =
+        firstReservation.status === "cancelled" ||
+        firstReservation.status === "finished";
 
-    const secondIsInactive =
-      secondReservation.status === "cancelled" ||
-      secondReservation.status === "finished";
+      const secondIsInactive =
+        secondReservation.status === "cancelled" ||
+        secondReservation.status === "finished";
 
-    if (firstIsInactive !== secondIsInactive) {
-      return firstIsInactive ? 1 : -1;
-    }
+      if (firstIsInactive !== secondIsInactive) {
+        return firstIsInactive ? 1 : -1;
+      }
 
-    const firstDate = new Date(
-      `${firstReservation.event_date}T00:00:00`,
-    ).getTime();
+      const firstDate = new Date(
+        `${firstReservation.event_date}T00:00:00`,
+      ).getTime();
 
-    const secondDate = new Date(
-      `${secondReservation.event_date}T00:00:00`,
-    ).getTime();
+      const secondDate = new Date(
+        `${secondReservation.event_date}T00:00:00`,
+      ).getTime();
 
-    if (firstIsInactive) {
-      return secondDate - firstDate;
-    }
+      if (firstIsInactive) {
+        return secondDate - firstDate;
+      }
 
-    return firstDate - secondDate;
-  },
-);
+      return firstDate - secondDate;
+    },
+  );
 
-  const {
-    data: customers = [],
-  } = useCustomers();
+  const { data: customers = [] } = useCustomers();
 
   useEffect(() => {
     if (!locationState?.successMessage) {
       return;
     }
 
-    window.history.replaceState(
-      {},
-      document.title,
-    );
+    window.history.replaceState({}, document.title);
   }, [locationState]);
 
-  function getCustomerName(
-    customerId: number,
-  ): string {
+  function getCustomerName(customerId: number): string {
     return (
-      customers.find(
-        (customer) => customer.id === customerId,
-      )?.full_name ?? "Cliente no encontrado"
+      customers.find((customer) => customer.id === customerId)?.full_name ??
+      "Cliente no encontrado"
     );
   }
 
@@ -289,9 +237,7 @@ function ReservationsPage() {
       {!isError && reservations.length > 0 && (
         <Grid container spacing={3}>
           {sortedReservations.map((reservation) => {
-            const remainingBalance = Number(
-              reservation.remaining_balance,
-            );
+            const remainingBalance = Number(reservation.remaining_balance);
 
             return (
               <Grid
@@ -306,19 +252,15 @@ function ReservationsPage() {
                   sx={{
                     height: "100%",
                     cursor: "pointer",
-                    transition:
-                      "transform 0.15s ease, box-shadow 0.15s ease",
+                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
 
                     "&:hover": {
                       transform: "translateY(-2px)",
-                      boxShadow:
-                        "0 8px 24px rgba(0, 0, 0, 0.10)",
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.10)",
                     },
                   }}
                   onClick={() => {
-                    navigate(
-                      `/reservations/${reservation.id}`,
-                    );
+                    navigate(`/reservations/${reservation.id}`);
                   }}
                 >
                   <CardContent>
@@ -326,8 +268,7 @@ function ReservationsPage() {
                       <Box
                         sx={{
                           display: "flex",
-                          justifyContent:
-                            "space-between",
+                          justifyContent: "space-between",
                           alignItems: "flex-start",
                           gap: 2,
                         }}
@@ -339,9 +280,7 @@ function ReservationsPage() {
                               fontWeight: 700,
                             }}
                           >
-                            {getCustomerName(
-                              reservation.customer_id,
-                            )}
+                            {getCustomerName(reservation.customer_id)}
                           </Typography>
 
                           <Typography
@@ -350,20 +289,13 @@ function ReservationsPage() {
                               color: "text.secondary",
                             }}
                           >
-                            {reservation.event_type ??
-                              "Evento sin tipo"}
+                            {reservation.event_type ?? "Evento sin tipo"}
                           </Typography>
                         </Box>
 
-                        <Chip
-                          size="small"
-                          label={getStatusLabel(
-                            reservation.status,
-                          )}
-                          color={getStatusColor(
-                            reservation.status,
-                          )}
-                          variant="outlined"
+                        <ReservationStatusBadge
+                          status={reservation.status}
+                          compact
                         />
                       </Box>
 
@@ -375,9 +307,7 @@ function ReservationsPage() {
                             textTransform: "capitalize",
                           }}
                         >
-                          {formatDate(
-                            reservation.event_date,
-                          )}
+                          {formatDate(reservation.event_date)}
                         </Typography>
 
                         <Typography
@@ -386,13 +316,9 @@ function ReservationsPage() {
                             color: "text.secondary",
                           }}
                         >
-                          {formatTime(
-                            reservation.start_time,
-                          )}
+                          {formatTime(reservation.start_time)}
                           {reservation.end_time
-                            ? ` - ${formatTime(
-                                reservation.end_time,
-                              )}`
+                            ? ` - ${formatTime(reservation.end_time)}`
                             : ""}
                         </Typography>
                       </Box>
@@ -403,8 +329,7 @@ function ReservationsPage() {
                           borderTop: "1px solid",
                           borderColor: "divider",
                           display: "flex",
-                          justifyContent:
-                            "space-between",
+                          justifyContent: "space-between",
                           gap: 2,
                         }}
                       >
@@ -423,9 +348,7 @@ function ReservationsPage() {
                               fontWeight: 700,
                             }}
                           >
-                            {formatCurrency(
-                              reservation.total_price,
-                            )}
+                            {formatCurrency(reservation.total_price)}
                           </Typography>
                         </Box>
 
@@ -452,9 +375,7 @@ function ReservationsPage() {
                                   : "success.main",
                             }}
                           >
-                            {formatCurrency(
-                              reservation.remaining_balance,
-                            )}
+                            {formatCurrency(reservation.remaining_balance)}
                           </Typography>
                         </Box>
                       </Box>
