@@ -1,6 +1,9 @@
 import {
   Alert,
   FormControl,
+  Button,
+  Box,
+  Typography,
   InputLabel,
   MenuItem,
   Select,
@@ -20,10 +23,7 @@ interface PaymentSectionProps {
   ) => void;
 }
 
-function PaymentSection({
-  formData,
-  onChange,
-}: PaymentSectionProps) {
+function PaymentSection({ formData, onChange }: PaymentSectionProps) {
   const hasDeposit = formData.depositAmount > 0;
 
   return (
@@ -47,23 +47,23 @@ function PaymentSection({
             label="Método de pago"
             value={formData.paymentMethod}
             onChange={(event) => {
-              onChange(
-                "paymentMethod",
-                event.target.value as ReservationFormData["paymentMethod"],
-              );
+              const paymentMethod = event.target
+                .value as ReservationFormData["paymentMethod"];
+
+              onChange("paymentMethod", paymentMethod);
+
+              if (paymentMethod !== "transfer") {
+                onChange("paymentReceiptFile", null);
+              }
             }}
           >
             <MenuItem value="">
               <em>Seleccionar...</em>
             </MenuItem>
 
-            <MenuItem value="cash">
-              Efectivo
-            </MenuItem>
+            <MenuItem value="cash">Efectivo</MenuItem>
 
-            <MenuItem value="transfer">
-              Transferencia
-            </MenuItem>
+            <MenuItem value="transfer">Transferencia</MenuItem>
           </Select>
         </FormControl>
 
@@ -90,13 +90,71 @@ function PaymentSection({
           value={formData.paymentReference}
           disabled={!hasDeposit}
           onChange={(event) => {
-            onChange(
-              "paymentReference",
-              event.target.value,
-            );
+            onChange("paymentReference", event.target.value);
           }}
           placeholder="Ejemplo: folio o número de operación"
         />
+        {formData.paymentMethod === "transfer" && (
+          <Box>
+            <Button
+              component="label"
+              variant="outlined"
+              disabled={!hasDeposit}
+              fullWidth
+            >
+              {formData.paymentReceiptFile
+                ? "Cambiar fotografía"
+                : "Agregar fotografía del comprobante"}
+
+              <input
+                hidden
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+
+                  onChange("paymentReceiptFile", file);
+
+                  event.target.value = "";
+                }}
+              />
+            </Button>
+
+            {formData.paymentReceiptFile && (
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{
+                  mt: 1,
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    minWidth: 0,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {formData.paymentReceiptFile.name}
+                </Typography>
+
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={() => {
+                    onChange("paymentReceiptFile", null);
+                  }}
+                >
+                  Quitar
+                </Button>
+              </Stack>
+            )}
+          </Box>
+        )}
       </Stack>
     </FormSection>
   );

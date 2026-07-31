@@ -3,7 +3,7 @@ export interface QuickMessage {
   venue_id: number;
   title: string;
   content: string;
-  display_order: number;
+  is_favorite: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -11,11 +11,11 @@ export interface QuickMessage {
 export interface QuickMessageCreate {
   title: string;
   content: string;
-  display_order: number;
+  is_favorite: boolean;
 }
 
 export interface QuickMessageUpdate {
   title?: string;
   content?: string;
-  display_order?: number;
+  is_favorite?: boolean;
 }

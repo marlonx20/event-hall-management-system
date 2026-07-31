@@ -14,3 +14,11 @@ export interface CustomerCreate {
   messenger_user_name: string | null;
   notes: string | null;
 }
+
+export interface CustomerUpdate {
+  full_name: string;
+  phone_number: string | null;
+  preferred_contact_method: string;
+  messenger_user_name: string | null;
+  notes: string | null;
+}

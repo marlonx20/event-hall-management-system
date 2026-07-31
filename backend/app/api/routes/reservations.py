@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.crud import customer as customer_crud
@@ -84,6 +84,31 @@ def get_reservations(
     db: Annotated[Session, Depends(get_db)],
 ) -> list[ReservationRead]:
     reservations = reservation_crud.get_reservations(db)
+
+    return reservation_service.build_reservation_list_response(
+        db,
+        reservations,
+    )
+
+
+@router.get(
+    "/search",
+    response_model=list[ReservationRead],
+)
+def search_reservations(
+    q: Annotated[
+        str,
+        Query(
+            min_length=1,
+            max_length=100,
+        ),
+    ],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[ReservationRead]:
+    reservations = reservation_crud.search_reservations(
+        db,
+        q,
+    )
 
     return reservation_service.build_reservation_list_response(
         db,

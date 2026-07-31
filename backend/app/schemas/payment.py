@@ -18,4 +18,8 @@ class PaymentRead(PaymentCreate):
     id: int
     reservation_id: int
 
+    receipt_original_name: str | None = None
+    receipt_content_type: str | None = None
+    receipt_url: str | None = None
+
     model_config = {"from_attributes": True}

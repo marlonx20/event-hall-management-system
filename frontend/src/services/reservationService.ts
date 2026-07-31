@@ -70,3 +70,18 @@ export async function finishReservation(
 
   return response.data;
 }
+
+export async function searchReservations(
+  query: string,
+): Promise<Reservation[]> {
+  const response = await httpClient.get<Reservation[]>(
+    "/reservations/search",
+    {
+      params: {
+        q: query,
+      },
+    },
+  );
+
+  return response.data;
+}

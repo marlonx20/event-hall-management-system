@@ -12,6 +12,7 @@ export interface ReservationCreate {
   event_type: string | null;
   guest_count: number | null;
   has_bouncy_castle: boolean;
+  total_price: number;
   status: ReservationStatus;
   special_requirements: string | null;
   internal_notes: string | null;
@@ -22,6 +23,7 @@ export interface ReservationUpdate {
   event_date?: string;
   start_time?: string;
   end_time?: string | null;
+  total_price?: number;
   event_type?: string | null;
   guest_count?: number | null;
   has_bouncy_castle?: boolean;

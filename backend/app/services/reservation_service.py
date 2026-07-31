@@ -30,8 +30,8 @@ def calculate_total_price(
 
     total_price = venue.base_price
 
-    if not has_bouncy_castle:
-        total_price -= venue.bouncy_castle_cost
+    if has_bouncy_castle:
+        total_price += venue.bouncy_castle_cost
 
     return total_price
 
@@ -40,16 +40,16 @@ def prepare_reservation_create(
     db: Session,
     reservation_data: ReservationCreate,
 ) -> dict[str, object]:
-    total_price = calculate_total_price(
-        db=db,
-        has_bouncy_castle=reservation_data.has_bouncy_castle,
-        venue_id=DEFAULT_VENUE_ID,
+    venue = venue_crud.get_venue(
+        db,
+        DEFAULT_VENUE_ID,
     )
 
-    reservation_dict: dict[str, object] = reservation_data.model_dump()
+    if venue is None:
+        raise ValueError("Venue configuration not found")
 
+    reservation_dict: dict[str, object] = reservation_data.model_dump()
     reservation_dict["venue_id"] = DEFAULT_VENUE_ID
-    reservation_dict["total_price"] = total_price
 
     return reservation_dict
 
@@ -111,20 +111,19 @@ def update_reservation(
             "A finished reservation cannot be updated",
         )
 
+    previous_event_date = reservation.event_date
+    previous_status = reservation.status
+
     update_data: dict[str, object] = reservation_data.model_dump(
         exclude_unset=True,
     )
 
-    has_bouncy_castle = update_data.get(
-        "has_bouncy_castle",
-    )
+    has_bouncy_castle = update_data.get("has_bouncy_castle")
 
-    if has_bouncy_castle is not None:
+    if has_bouncy_castle is not None and "total_price" not in update_data:
         update_data["total_price"] = calculate_total_price(
             db=db,
-            has_bouncy_castle=bool(
-                has_bouncy_castle,
-            ),
+            has_bouncy_castle=bool(has_bouncy_castle),
             venue_id=reservation.venue_id,
         )
 
@@ -143,7 +142,6 @@ def update_reservation(
 
         if extra_hours is None:
             update_data["extra_hours"] = Decimal("0.00")
-
             update_data["extra_charge"] = Decimal("0.00")
         else:
             update_data["extra_charge"] = Decimal(str(extra_hours)) * venue.extra_hour_price
@@ -195,11 +193,42 @@ def update_reservation(
         )
 
     try:
-        return reservation_crud.update_reservation(
-            db,
-            reservation,
-            update_data,
-        )
+        for field, value in update_data.items():
+            setattr(
+                reservation,
+                field,
+                value,
+            )
+
+        new_event_date = reservation.event_date
+        event_date_changed = previous_event_date != new_event_date
+
+        if reservation.status == ReservationStatus.CONFIRMED:
+            reservation_crud.cancel_other_pending_reservations(
+                db,
+                reservation,
+            )
+
+        if previous_status == ReservationStatus.CONFIRMED and event_date_changed:
+            confirmed_reservation_on_previous_date = (
+                reservation_crud.get_confirmed_reservation_by_date(
+                    db,
+                    previous_event_date,
+                    excluded_reservation_id=reservation.id,
+                )
+            )
+
+            if confirmed_reservation_on_previous_date is None:
+                reservation_crud.restore_auto_cancelled_reservations(
+                    db,
+                    previous_event_date,
+                )
+
+        db.commit()
+        db.refresh(reservation)
+
+        return reservation
+
     except Exception:
         db.rollback()
         raise
@@ -218,12 +247,26 @@ def cancel_reservation(
         raise ValueError(
             "A finished reservation cannot be cancelled",
         )
+    was_confirmed = reservation.status == ReservationStatus.CONFIRMED
 
     try:
         cancelled_reservation = reservation_crud.cancel_reservation_manually(
             db,
             reservation,
         )
+
+        if was_confirmed:
+            confirmed_reservation = reservation_crud.get_confirmed_reservation_by_date(
+                db,
+                reservation.event_date,
+                excluded_reservation_id=reservation.id,
+            )
+
+            if confirmed_reservation is None:
+                reservation_crud.restore_auto_cancelled_reservations(
+                    db,
+                    reservation.event_date,
+                )
 
         db.commit()
         db.refresh(

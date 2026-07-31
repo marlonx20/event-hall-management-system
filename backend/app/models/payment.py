@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
-    from app.model.reservation import Reservation
+    from app.models.reservation import Reservation
 
 
 class PaymentMethod(StrEnum):
@@ -69,6 +69,28 @@ class Payment(Base):
         String(100),
         nullable=True,
     )
+
+    receipt_filename: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    receipt_original_name: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    receipt_content_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    @property
+    def receipt_url(self) -> str | None:
+        if self.receipt_filename is None:
+            return None
+
+        return f"/reservations/{self.reservation_id}/payments/{self.id}/receipt"
 
     reservation: Mapped["Reservation"] = relationship(
         back_populates="payments",

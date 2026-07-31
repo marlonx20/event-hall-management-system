@@ -1,4 +1,4 @@
-  import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import {
   Alert,
@@ -10,7 +10,6 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { isAxiosError } from "axios";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import {
@@ -26,6 +25,8 @@ import { useCustomers } from "../hooks/useCustomers";
 import { useReservation } from "../hooks/useReservation";
 import { useUpdateReservation } from "../hooks/useUpdateReservation";
 import { useVenue } from "../hooks/useVenue";
+import { useSnackbar } from "../hooks/useSnackbar";
+import { translateApiError } from "../utils/translateApiError";
 import type { ReservationUpdate } from "../types/reservation";
 import {
   initialReservationFormData,
@@ -35,6 +36,7 @@ import {
 function EditReservationPage() {
   const navigate = useNavigate();
   const { reservationId } = useParams();
+  const { showSnackbar } = useSnackbar();
 
   const numericReservationId = Number(reservationId);
 
@@ -57,9 +59,6 @@ function EditReservationPage() {
 
   const [validationErrors, setValidationErrors] =
     useState<string[]>([]);
-
-  const [saveError, setSaveError] =
-    useState<string | null>(null);
 
   const [initialized, setInitialized] =
     useState(false);
@@ -124,7 +123,6 @@ function EditReservationPage() {
     }));
 
     setValidationErrors([]);
-    setSaveError(null);
   }
 
   function validateForm(): string[] {
@@ -220,25 +218,10 @@ function EditReservationPage() {
     };
   }
 
-  function getErrorMessage(
-    error: unknown,
-  ): string {
-    if (isAxiosError(error)) {
-      const detail = error.response?.data?.detail;
-
-      if (typeof detail === "string") {
-        return detail;
-      }
-    }
-
-    return "No fue posible actualizar la reservación.";
-  }
-
   function handleSubmit() {
     const errors = validateForm();
 
     setValidationErrors(errors);
-    setSaveError(null);
 
     if (errors.length > 0) {
       window.scrollTo({
@@ -258,26 +241,27 @@ function EditReservationPage() {
       },
       {
         onSuccess: (updatedReservation) => {
+          showSnackbar({
+            severity: "success",
+            message:
+              "Reservación actualizada correctamente.",
+          });
+
           navigate(
             `/reservations/${updatedReservation.id}`,
             {
               replace: true,
-              state: {
-                successMessage:
-                  "Reservación actualizada correctamente.",
-              },
             },
           );
         },
 
         onError: (error) => {
-          setSaveError(
-            getErrorMessage(error),
-          );
-
-          window.scrollTo({
-            top: 0,
-            behavior: "smooth",
+          showSnackbar({
+            severity: "error",
+            message: translateApiError(
+              error,
+              "No fue posible actualizar la reservación.",
+            ),
           });
         },
       },
@@ -384,14 +368,6 @@ function EditReservationPage() {
         </Alert>
       )}
 
-      {saveError && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-        >
-          {saveError}
-        </Alert>
-      )}
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 8 }}>

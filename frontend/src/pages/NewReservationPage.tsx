@@ -1,18 +1,7 @@
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import {
-  Alert,
-  Box,
-  Grid,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
-import { isAxiosError } from "axios";
-import { useState } from "react";
-import {
-  useNavigate,
-  useSearchParams,
-} from "react-router-dom";
+import { Box, Grid, IconButton, Stack, Typography } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
 import AdditionalInfoSection from "../components/reservations/AdditionalInfoSection";
 import CustomerSection from "../components/reservations/CustomerSection";
@@ -24,6 +13,8 @@ import ReservationSummary from "../components/reservations/ReservationSummary";
 import { useCreateReservation } from "../hooks/useCreateReservation";
 import { useCustomers } from "../hooks/useCustomers";
 import { useVenue } from "../hooks/useVenue";
+import { useSnackbar } from "../hooks/useSnackbar";
+import { translateApiError } from "../utils/translateApiError";
 import type { PaymentCreate } from "../types/payment";
 import type { ReservationCreate } from "../types/reservation";
 import {
@@ -33,79 +24,108 @@ import {
 
 function NewReservationPage() {
   const navigate = useNavigate();
+  const { showSnackbar } = useSnackbar();
 
   const [searchParams] = useSearchParams();
 
-const dateFromCalendar =
-  searchParams.get("date");
+  const venueScheduleWasApplied = useRef(false);
 
-const initialEventDate =
-  dateFromCalendar &&
-  dayjs(
-    dateFromCalendar,
-    "YYYY-MM-DD",
-    true,
-  ).isValid()
-    ? dayjs(dateFromCalendar)
-    : null;
+  const dateFromCalendar = searchParams.get("date");
 
-  const createReservationMutation =
-    useCreateReservation();
+  const initialEventDate =
+    dateFromCalendar && dayjs(dateFromCalendar, "YYYY-MM-DD", true).isValid()
+      ? dayjs(dateFromCalendar)
+      : null;
 
-  const [formData, setFormData] =
-  useState<ReservationFormData>(() => ({
+  const createReservationMutation = useCreateReservation();
+
+  const [formData, setFormData] = useState<ReservationFormData>(() => ({
     ...initialReservationFormData,
-    eventDate:
-      initialEventDate ??
-      initialReservationFormData.eventDate,
+    eventDate: initialEventDate ?? initialReservationFormData.eventDate,
   }));
 
-  const [validationErrors, setValidationErrors] =
-    useState<string[]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  const [saveError, setSaveError] =
-    useState<string | null>(null);
-
-  const [formValidated, setFormValidated] =
-    useState(false);
+  const [priceWasEdited, setPriceWasEdited] = useState(false);
 
   const { data: venue } = useVenue();
   const { data: customers = [] } = useCustomers();
 
-  const selectedCustomer =
-    customers.find(
-      (customer) =>
-        customer.id === formData.customerId,
-    ) ?? null;
-
-  const totalPrice =
-    !venue ||
-    formData.hasBouncyCastle === null
+  const suggestedPrice =
+    !venue || formData.hasBouncyCastle === null
       ? null
-      : formData.hasBouncyCastle
-        ? Number(venue.base_price)
-        : Number(venue.base_price) -
-          Number(venue.bouncy_castle_cost);
+      : Number(venue.base_price) +
+        (formData.hasBouncyCastle ? Number(venue.bouncy_castle_cost) : 0);
 
-  function handleFieldChange<
-    K extends keyof ReservationFormData,
-  >(
-    field: K,
-    value: ReservationFormData[K],
-  ) {
+  useEffect(() => {
+    if (!venue || venueScheduleWasApplied.current) {
+      return;
+    }
+
+    venueScheduleWasApplied.current = true;
+
+    setFormData((currentData) => {
+      const nextStartTime =
+        currentData.startTime ??
+        (venue.opening_time ? dayjs(`2000-01-01T${venue.opening_time}`) : null);
+
+      const nextEndTime =
+        currentData.endTime ??
+        (venue.closing_time ? dayjs(`2000-01-01T${venue.closing_time}`) : null);
+
+      return {
+        ...currentData,
+        startTime: nextStartTime,
+        endTime: nextEndTime,
+      };
+    });
+  }, [venue]);
+
+  useEffect(() => {
+    if (suggestedPrice === null || priceWasEdited) {
+      return;
+    }
+
     setFormData((currentData) => ({
       ...currentData,
-      [field]: value,
+      totalPrice: suggestedPrice,
     }));
+  }, [suggestedPrice, priceWasEdited]);
 
-    if (
-      formValidated ||
-      validationErrors.length > 0 ||
-      saveError
-    ) {
-      setFormValidated(false);
+  const selectedCustomer =
+    customers.find((customer) => customer.id === formData.customerId) ?? null;
+
+  function handleFieldChange<K extends keyof ReservationFormData>(
+    field: K,
+    value: ReservationFormData[K],
+  ): void {
+    if (field === "totalPrice") {
+      setPriceWasEdited(true);
+    }
+
+    if (field === "hasBouncyCastle" && !priceWasEdited && venue) {
+      const hasBouncyCastle = value as boolean | null;
+
+      const nextPrice =
+        hasBouncyCastle === null
+          ? null
+          : Number(venue.base_price) +
+            (hasBouncyCastle ? Number(venue.bouncy_castle_cost) : 0);
+
+      setFormData((currentData) => ({
+        ...currentData,
+        hasBouncyCastle,
+        totalPrice: nextPrice,
+      }));
+    } else {
+      setFormData((currentData) => ({
+        ...currentData,
+        [field]: value,
+      }));
+    }
+
+    if (validationErrors.length > 0) {
       setValidationErrors([]);
-      setSaveError(null);
     }
   }
 
@@ -113,35 +133,25 @@ const initialEventDate =
     const errors: string[] = [];
 
     if (formData.customerId === null) {
-      errors.push(
-        "Debes seleccionar un cliente.",
-      );
+      errors.push("Debes seleccionar un cliente.");
     }
 
     if (!formData.eventDate) {
-      errors.push(
-        "Debes seleccionar la fecha del evento.",
-      );
+      errors.push("Debes seleccionar la fecha del evento.");
     }
 
     if (!formData.startTime) {
-      errors.push(
-        "Debes seleccionar la hora de inicio.",
-      );
+      errors.push("Debes seleccionar la hora de inicio.");
     }
 
     if (!formData.endTime) {
-      errors.push(
-        "Debes seleccionar la hora de finalización.",
-      );
+      errors.push("Debes seleccionar la hora de finalización.");
     }
 
     if (
       formData.startTime &&
       formData.endTime &&
-      !formData.endTime.isAfter(
-        formData.startTime,
-      )
+      !formData.endTime.isAfter(formData.startTime)
     ) {
       errors.push(
         "La hora de finalización debe ser posterior a la hora de inicio.",
@@ -149,57 +159,35 @@ const initialEventDate =
     }
 
     if (!formData.eventType.trim()) {
-      errors.push(
-        "Debes seleccionar el tipo de evento.",
-      );
+      errors.push("Debes seleccionar el tipo de evento.");
+    }
+
+    if (formData.hasBouncyCastle === null) {
+      errors.push("Debes indicar si la reservación incluye brincolín.");
+    }
+
+    if (formData.guestCount !== null && formData.guestCount < 1) {
+      errors.push("El número de personas debe ser mayor que cero.");
+    }
+
+    if (formData.totalPrice === null || formData.totalPrice <= 0) {
+      errors.push("No fue posible determinar el precio de la reservación.");
     }
 
     if (
-      formData.hasBouncyCastle === null
+      formData.totalPrice !== null &&
+      formData.depositAmount > formData.totalPrice
     ) {
-      errors.push(
-        "Debes indicar si la reservación incluye brincolín.",
-      );
-    }
-
-    if (
-      formData.guestCount !== null &&
-      formData.guestCount < 1
-    ) {
-      errors.push(
-        "El número de personas debe ser mayor que cero.",
-      );
-    }
-
-    if (
-      totalPrice === null ||
-      totalPrice <= 0
-    ) {
-      errors.push(
-        "No fue posible determinar el precio de la reservación.",
-      );
-    }
-
-    if (
-      totalPrice !== null &&
-      formData.depositAmount > totalPrice
-    ) {
-      errors.push(
-        "El anticipo no puede superar el precio total.",
-      );
+      errors.push("El anticipo no puede superar el precio total.");
     }
 
     if (formData.depositAmount > 0) {
       if (!formData.paymentMethod) {
-        errors.push(
-          "Debes seleccionar el método del pago inicial.",
-        );
+        errors.push("Debes seleccionar el método del pago inicial.");
       }
 
       if (!formData.paymentDate) {
-        errors.push(
-          "Debes seleccionar la fecha del pago inicial.",
-        );
+        errors.push("Debes seleccionar la fecha del pago inicial.");
       }
     }
 
@@ -209,24 +197,16 @@ const initialEventDate =
   function buildReservationData(): ReservationCreate {
     return {
       customer_id: formData.customerId!,
-      event_date:
-        formData.eventDate!.format("YYYY-MM-DD"),
-      start_time:
-        formData.startTime!.format("HH:mm:ss"),
-      end_time:
-        formData.endTime?.format("HH:mm:ss") ??
-        null,
-      event_type:
-        formData.eventType.trim() || null,
+      event_date: formData.eventDate!.format("YYYY-MM-DD"),
+      start_time: formData.startTime!.format("HH:mm:ss"),
+      end_time: formData.endTime?.format("HH:mm:ss") ?? null,
+      event_type: formData.eventType.trim() || null,
       guest_count: formData.guestCount,
-      has_bouncy_castle:
-        formData.hasBouncyCastle!,
+      has_bouncy_castle: formData.hasBouncyCastle!,
+      total_price: formData.totalPrice!,
       status: "pending",
-      special_requirements:
-        formData.specialRequirements.trim() ||
-        null,
-      internal_notes:
-        formData.internalNotes.trim() || null,
+      special_requirements: formData.specialRequirements.trim() || null,
+      internal_notes: formData.internalNotes.trim() || null,
     };
   }
 
@@ -237,44 +217,17 @@ const initialEventDate =
 
     return {
       amount: formData.depositAmount,
-      payment_date:
-        formData.paymentDate!.format(
-          "YYYY-MM-DD",
-        ),
-      method: formData.paymentMethod as
-        | "cash"
-        | "transfer",
+      payment_date: formData.paymentDate!.format("YYYY-MM-DD"),
+      method: formData.paymentMethod as "cash" | "transfer",
       concept: "deposit",
-      reference:
-        formData.paymentReference.trim() ||
-        null,
+      reference: formData.paymentReference.trim() || null,
     };
-  }
-
-  function getSaveErrorMessage(
-    error: unknown,
-  ): string {
-    if (isAxiosError(error)) {
-      const detail = error.response?.data?.detail;
-
-      if (typeof detail === "string") {
-        return detail;
-      }
-
-      if (error.response?.status === 409) {
-        return "Ya existe una reservación confirmada para esa fecha.";
-      }
-    }
-
-    return "No fue posible guardar la reservación. Revisa la información e inténtalo de nuevo.";
   }
 
   function handleSubmit() {
     const errors = validateForm();
 
     setValidationErrors(errors);
-    setSaveError(null);
-    setFormValidated(false);
 
     if (errors.length > 0) {
       window.scrollTo({
@@ -287,32 +240,34 @@ const initialEventDate =
 
     createReservationMutation.mutate(
       {
-        reservationData:
-          buildReservationData(),
+        reservationData: buildReservationData(),
         paymentData: buildPaymentData(),
+        paymentReceiptFile:
+          formData.paymentReceiptFile,
       },
       {
         onSuccess: (reservation) => {
-          setFormValidated(true);
+          showSnackbar({
+            severity: "success",
+            message:
+              "Reservación creada correctamente.",
+          });
 
           navigate("/reservations", {
             replace: true,
             state: {
-              successMessage:
-                "Reservación creada correctamente.",
               reservationId: reservation.id,
             },
           });
         },
 
         onError: (error) => {
-          setSaveError(
-            getSaveErrorMessage(error),
-          );
-
-          window.scrollTo({
-            top: 0,
-            behavior: "smooth",
+          showSnackbar({
+            severity: "error",
+            message: translateApiError(
+              error,
+              "No fue posible guardar la reservación. Revisa la información e inténtalo de nuevo.",
+            ),
           });
         },
       },
@@ -331,9 +286,7 @@ const initialEventDate =
       >
         <IconButton
           aria-label="Regresar"
-          disabled={
-            createReservationMutation.isPending
-          }
+          disabled={createReservationMutation.isPending}
           onClick={() => {
             navigate("/reservations");
           }}
@@ -351,27 +304,12 @@ const initialEventDate =
         </Typography>
       </Stack>
 
-      {formValidated && (
-        <Alert
-          severity="success"
-          sx={{ mb: 3 }}
-        >
-          Reservación guardada correctamente.
-        </Alert>
-      )}
-
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <Stack spacing={3}>
-            <CustomerSection
-              formData={formData}
-              onChange={handleFieldChange}
-            />
+            <CustomerSection formData={formData} onChange={handleFieldChange} />
 
-            <EventSection
-              formData={formData}
-              onChange={handleFieldChange}
-            />
+            <EventSection formData={formData} onChange={handleFieldChange} />
 
             <AdditionalInfoSection
               formData={formData}
@@ -387,17 +325,12 @@ const initialEventDate =
               onChange={handleFieldChange}
             />
 
-            <PaymentSection
-              formData={formData}
-              onChange={handleFieldChange}
-            />
+            <PaymentSection formData={formData} onChange={handleFieldChange} />
 
             <ReservationSummary
               formData={formData}
-              selectedCustomer={
-                selectedCustomer
-              }
-              totalPrice={totalPrice}
+              selectedCustomer={selectedCustomer}
+              totalPrice={formData.totalPrice}
             />
           </Stack>
         </Grid>
@@ -405,13 +338,9 @@ const initialEventDate =
 
       <Box sx={{ mt: 3 }}>
         <ReservationActions
-          validationErrors={
-            validationErrors
-          }
-          isSaving={
-            createReservationMutation.isPending
-          }
-          saveError={saveError}
+          validationErrors={validationErrors}
+          isSaving={createReservationMutation.isPending}
+          saveError={null}
           onCancel={() => {
             navigate("/reservations");
           }}

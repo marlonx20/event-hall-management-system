@@ -25,9 +25,6 @@ interface FinishReservationDialogProps {
   currentDamageCharge: number;
 
   isSaving: boolean;
-  hasError: boolean;
-  errorMessage: string | null;
-
   onClose: () => void;
 
   onSaveCharges: (data: {
@@ -56,8 +53,6 @@ function FinishReservationDialog({
   currentDamageDescription,
   currentDamageCharge,
   isSaving,
-  hasError,
-  errorMessage,
   onClose,
   onSaveCharges,
   onFinish,
@@ -201,13 +196,6 @@ function FinishReservationDialog({
 
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
-          {hasError && (
-            <Alert severity="error">
-              {errorMessage ??
-                "No fue posible completar la operación."}
-            </Alert>
-          )}
-
           {validationMessage && (
             <Alert severity="warning">
               {validationMessage}

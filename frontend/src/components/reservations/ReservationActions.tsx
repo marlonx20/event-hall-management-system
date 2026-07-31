@@ -9,7 +9,6 @@ import {
 interface ReservationActionsProps {
   validationErrors: string[];
   isSaving: boolean;
-  saveError: string | null;
   onCancel: () => void;
   onSubmit: () => void;
 }
@@ -17,7 +16,6 @@ interface ReservationActionsProps {
 function ReservationActions({
   validationErrors,
   isSaving,
-  saveError,
   onCancel,
   onSubmit,
 }: ReservationActionsProps) {
@@ -30,12 +28,6 @@ function ReservationActions({
               <li key={error}>{error}</li>
             ))}
           </Box>
-        </Alert>
-      )}
-
-      {saveError && (
-        <Alert severity="error">
-          {saveError}
         </Alert>
       )}
 

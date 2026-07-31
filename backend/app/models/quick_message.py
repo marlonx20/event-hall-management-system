@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -30,10 +30,10 @@ class QuickMessage(Base):
         nullable=False,
     )
 
-    display_order: Mapped[int] = mapped_column(
-        Integer,
+    is_favorite: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
-        default=0,
+        default=False,
     )
 
     created_at: Mapped[datetime] = mapped_column(

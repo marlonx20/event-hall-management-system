@@ -3,7 +3,7 @@ import {
   Grid,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import { TimeField } from "@mui/x-date-pickers/TimeField";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
 import { useUpdateVenue } from "../../hooks/useUpdateVenue";
@@ -133,7 +133,7 @@ function VenueScheduleCard({
   >
     <Grid container spacing={2.5}>
       <Grid size={{ xs: 12, md: 6 }}>
-        <TimeField
+        <TimePicker
   label="Hora de apertura"
   value={
     openingTime
@@ -162,7 +162,7 @@ function VenueScheduleCard({
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }}>
-        <TimeField
+        <TimePicker
   label="Hora de cierre"
   value={
     closingTime

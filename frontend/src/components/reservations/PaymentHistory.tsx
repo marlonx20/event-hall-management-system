@@ -1,19 +1,22 @@
 import {
   Alert,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Divider,
   Stack,
   Typography,
 } from "@mui/material";
-
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { useReservationPayments } from "../../hooks/useReservationPayments";
 import type {
   Payment,
   PaymentConcept,
   PaymentMethod,
 } from "../../types/payment";
+
+import { openPaymentReceipt } from "../../services/paymentService";
 
 interface PaymentHistoryProps {
   reservationId: number;
@@ -34,9 +37,7 @@ function formatDate(value: string): string {
   }).format(new Date(`${value}T00:00:00`));
 }
 
-function getConceptLabel(
-  concept: PaymentConcept,
-): string {
+function getConceptLabel(concept: PaymentConcept): string {
   switch (concept) {
     case "deposit":
       return "Anticipo";
@@ -57,12 +58,7 @@ function getConceptLabel(
 
 function getConceptColor(
   concept: PaymentConcept,
-):
-  | "success"
-  | "info"
-  | "warning"
-  | "error"
-  | "default" {
+): "success" | "info" | "warning" | "error" | "default" {
   switch (concept) {
     case "deposit":
       return "success";
@@ -81,9 +77,7 @@ function getConceptColor(
   }
 }
 
-function getMethodLabel(
-  method: PaymentMethod,
-): string {
+function getMethodLabel(method: PaymentMethod): string {
   switch (method) {
     case "cash":
       return "Efectivo";
@@ -96,9 +90,7 @@ function getMethodLabel(
   }
 }
 
-function PaymentHistory({
-  reservationId,
-}: PaymentHistoryProps) {
+function PaymentHistory({ reservationId }: PaymentHistoryProps) {
   const {
     data: payments = [],
     isLoading,
@@ -142,81 +134,97 @@ function PaymentHistory({
 
   return (
     <Stack spacing={2}>
-      {payments.map(
-        (
-          payment: Payment,
-          index: number,
-        ) => (
-          <Box key={payment.id}>
-            <Stack spacing={1}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: 2,
-                }}
-              >
-                <Box>
-                  <Typography
-                    sx={{
-                      fontWeight: 700,
-                    }}
-                  >
-                    {formatCurrency(payment.amount)}
-                  </Typography>
+      {payments.map((payment: Payment, index: number) => (
+        <Box key={payment.id}>
+          <Stack spacing={1}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 2,
+              }}
+            >
+              <Box>
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                  }}
+                >
+                  {formatCurrency(payment.amount)}
+                </Typography>
 
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "text.secondary",
-                    }}
-                  >
-                    {formatDate(payment.payment_date)}
-                  </Typography>
-                </Box>
-
-                <Chip
-                  size="small"
-                  label={getConceptLabel(
-                    payment.concept,
-                  )}
-                  color={getConceptColor(
-                    payment.concept,
-                  )}
-                  variant="outlined"
-                />
-              </Box>
-
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "text.secondary",
-                }}
-              >
-                Método:{" "}
-                {getMethodLabel(payment.method)}
-              </Typography>
-
-              {payment.reference && (
                 <Typography
                   variant="body2"
                   sx={{
                     color: "text.secondary",
-                    overflowWrap: "anywhere",
                   }}
                 >
-                  Referencia: {payment.reference}
+                  {formatDate(payment.payment_date)}
                 </Typography>
-              )}
-            </Stack>
+              </Box>
 
-            {index < payments.length - 1 && (
-              <Divider sx={{ mt: 2 }} />
+              <Chip
+                size="small"
+                label={getConceptLabel(payment.concept)}
+                color={getConceptColor(payment.concept)}
+                variant="outlined"
+              />
+            </Box>
+
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+              }}
+            >
+              Método: {getMethodLabel(payment.method)}
+            </Typography>
+
+            {payment.reference && (
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  overflowWrap: "anywhere",
+                }}
+              >
+                Referencia: {payment.reference}
+              </Typography>
             )}
-          </Box>
-        ),
-      )}
+            {payment.receipt_url && (
+              <Box>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<ReceiptLongOutlinedIcon />}
+                  onClick={() => {
+                    void openPaymentReceipt(reservationId, payment.id);
+                  }}
+                >
+                  Ver comprobante
+                </Button>
+
+                {payment.receipt_original_name && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      display: "block",
+                      mt: 0.5,
+                      color: "text.secondary",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {payment.receipt_original_name}
+                  </Typography>
+                )}
+              </Box>
+            )}
+          </Stack>
+
+          {index < payments.length - 1 && <Divider sx={{ mt: 2 }} />}
+        </Box>
+      ))}
     </Stack>
   );
 }

@@ -4,6 +4,8 @@ import AppLayout from "../layouts/AppLayout";
 import CalendarPage from "../pages/CalendarPage";
 import EditReservationPage from "../pages/EditReservationPage";
 import CustomersPage from "../pages/CustomersPage";
+import CustomerDetailPage from "../pages/CustomerDetailPage";
+import EditCustomerPage from "../pages/EditCustomerPage";
 import DashboardPage from "../pages/DashboardPage";
 import ReservationDetailPage from "../pages/ReservationDetailPage";
 import NewReservationPage from "../pages/NewReservationPage";
@@ -37,6 +39,16 @@ function AppRouter() {
 
           <Route path="customers/new" element={<NewCustomerPage />} />
 
+          <Route
+            path="customers/:customerId"
+            element={<CustomerDetailPage />}
+          />
+
+          <Route
+            path="customers/:customerId/edit"
+            element={<EditCustomerPage />}
+          />
+
           <Route path="tasks" element={<TasksPage />} />
 
           <Route path="settings" element={<SettingsPage />} />
@@ -47,7 +59,6 @@ function AppRouter() {
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />
-          
         </Route>
       </Routes>
     </BrowserRouter>

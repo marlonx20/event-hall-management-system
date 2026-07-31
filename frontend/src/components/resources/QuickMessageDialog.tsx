@@ -5,7 +5,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Stack,
+  Switch,
   TextField,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -21,7 +23,7 @@ interface QuickMessageDialogProps {
   onSave: (
     title: string,
     content: string,
-    displayOrder: number,
+    isFavorite: boolean,
   ) => void;
 }
 
@@ -35,7 +37,8 @@ function QuickMessageDialog({
 }: QuickMessageDialogProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [displayOrder, setDisplayOrder] = useState(0);
+  const [isFavorite, setIsFavorite] =
+    useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -44,15 +47,16 @@ function QuickMessageDialog({
 
     setTitle(message?.title ?? "");
     setContent(message?.content ?? "");
-    setDisplayOrder(message?.display_order ?? 0);
+    setIsFavorite(
+      message?.is_favorite ?? false,
+    );
   }, [message, open]);
 
   const isValid =
     title.trim().length > 0 &&
-    content.trim().length > 0 &&
-    displayOrder >= 0;
+    content.trim().length > 0;
 
-  function handleSave() {
+  function handleSave(): void {
     if (!isValid) {
       return;
     }
@@ -60,7 +64,7 @@ function QuickMessageDialog({
     onSave(
       title.trim(),
       content.trim(),
-      displayOrder,
+      isFavorite,
     );
   }
 
@@ -72,7 +76,9 @@ function QuickMessageDialog({
       maxWidth="sm"
     >
       <DialogTitle>
-        {message ? "Editar mensaje" : "Nuevo mensaje"}
+        {message
+          ? "Editar mensaje"
+          : "Nuevo mensaje"}
       </DialogTitle>
 
       <DialogContent>
@@ -109,25 +115,19 @@ function QuickMessageDialog({
             placeholder="Escribe aquí el texto que quieres copiar rápidamente..."
           />
 
-          <TextField
-            fullWidth
-            type="number"
-            label="Orden de aparición"
-            value={displayOrder}
-            disabled={isSaving}
-            onChange={(event) => {
-              const value = Number(event.target.value);
-
-              setDisplayOrder(
-                Number.isNaN(value) ? 0 : value,
-              );
-            }}
-            slotProps={{
-              htmlInput: {
-                min: 0,
-              },
-            }}
-            helperText="Los números menores aparecen primero."
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isFavorite}
+                disabled={isSaving}
+                onChange={(event) => {
+                  setIsFavorite(
+                    event.target.checked,
+                  );
+                }}
+              />
+            }
+            label="Marcar como favorito"
           />
         </Stack>
       </DialogContent>
@@ -146,7 +146,9 @@ function QuickMessageDialog({
           disabled={!isValid || isSaving}
           onClick={handleSave}
         >
-          {isSaving ? "Guardando..." : "Guardar"}
+          {isSaving
+            ? "Guardando..."
+            : "Guardar"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -20,7 +20,7 @@ function AppLayout() {
           pt: "104px",
           px: 4,
           pb: 4,
-          bgcolor: "#F7F8FA",
+          bgcolor: "#C5CCD3",
         }}
       >
         <Outlet />

@@ -4,7 +4,6 @@ import {
   EventNote,
   Groups,
   HelpOutlined,
-  Logout,
   Settings,
   TaskAlt,
 } from "@mui/icons-material";
@@ -195,36 +194,6 @@ function Sidebar() {
                 sx: {
                   fontSize: 15,
                   fontWeight: 500,
-                },
-              },
-            }}
-          />
-        </ListItemButton>
-
-        <ListItemButton
-          sx={{
-            minHeight: 44,
-            px: 1.5,
-            borderRadius: 2.5,
-            color: "error.main",
-          }}
-        >
-          <ListItemIcon
-            sx={{
-              minWidth: 40,
-              color: "error.main",
-            }}
-          >
-            <Logout />
-          </ListItemIcon>
-
-          <ListItemText
-            primary="Cerrar sesión"
-            slotProps={{
-              primary: {
-                sx: {
-                  fontSize: 15,
-                  fontWeight: 600,
                 },
               },
             }}

@@ -310,52 +310,63 @@ function CalendarPage() {
             borderColor: "divider",
           }}
         >
-          <IconButton
-            aria-label="Mes anterior"
-            onClick={() => {
-              setCurrentMonth((month) => month.subtract(1, "month"));
-            }}
-          >
-            <ChevronLeftIcon />
-          </IconButton>
-
           <Stack
             direction="row"
-            spacing={2}
+            spacing={1}
             sx={{
               alignItems: "center",
             }}
           >
-            <Typography
-              variant="h6"
+            <Stack
+              direction="row"
+              spacing={12}
               sx={{
-                fontWeight: 700,
-                textTransform: "capitalize",
+                alignItems: "center",
               }}
             >
-              {currentMonth.format("MMMM [de] YYYY")}
-            </Typography>
-
-            {!currentMonth.isSame(dayjs(), "month") && (
-              <Button
-                size="small"
+              <IconButton
+                aria-label="Mes anterior"
                 onClick={() => {
-                  setCurrentMonth(dayjs().startOf("month"));
+                  setCurrentMonth((month) => month.subtract(1, "month"));
                 }}
               >
-                Hoy
-              </Button>
-            )}
-          </Stack>
+                <ChevronLeftIcon />
+              </IconButton>
 
-          <IconButton
-            aria-label="Mes siguiente"
-            onClick={() => {
-              setCurrentMonth((month) => month.add(1, "month"));
-            }}
-          >
-            <ChevronRightIcon />
-          </IconButton>
+              <Typography
+                variant="h6"
+                sx={{
+                  width: 190,
+                  flexShrink: 0,
+                  textAlign: "center",
+                  fontWeight: 700,
+                  textTransform: "capitalize",
+                }}
+              >
+                {currentMonth.format("MMMM [de] YYYY")}
+              </Typography>
+
+              <IconButton
+                aria-label="Mes siguiente"
+                onClick={() => {
+                  setCurrentMonth((month) => month.add(1, "month"));
+                }}
+              >
+                <ChevronRightIcon />
+              </IconButton>
+            </Stack>
+
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={currentMonth.isSame(dayjs(), "month")}
+              onClick={() => {
+                setCurrentMonth(dayjs().startOf("month"));
+              }}
+            >
+              Hoy
+            </Button>
+          </Stack>
         </Box>
 
         <Box
@@ -412,10 +423,6 @@ function CalendarPage() {
 
             const isToday = day.isSame(dayjs(), "day");
 
-            const taskCount = tasks.filter(
-              (task) => task.due_date === dateKey,
-            ).length;
-
             const customerName = mainReservation
               ? (customerNamesById.get(mainReservation.customer_id) ??
                 "Cliente no encontrado")
@@ -443,15 +450,23 @@ function CalendarPage() {
                   p: 1.25,
                   borderRight: "1px solid",
                   borderBottom: "1px solid",
-                  borderColor: "divider",
+                  border: isToday ? "2px solid" : undefined,
+
+                  borderColor: isToday ? "success.main" : "divider",
+                  color: isToday ? "primary.main" : "inherit",
                   cursor: "pointer",
-                  bgcolor: belongsToCurrentMonth
-                    ? "background.paper"
-                    : "grey.50",
+                  bgcolor: isToday
+                    ? "rgba(76, 175, 80, 0.14)"
+                    : belongsToCurrentMonth
+                      ? "background.paper"
+                      : "grey.100",
                   opacity: belongsToCurrentMonth ? 1 : 0.55,
-                  transition: "background-color 0.15s ease",
+                  transition:
+                    "background-color .15s ease, border-color .15s ease",
                   "&:hover": {
-                    bgcolor: "action.hover",
+                    bgcolor: isToday
+                      ? "rgba(76, 175, 80, 0.20)"
+                      : "action.hover",
                   },
                   "&:focus-visible": {
                     outline: "2px solid",
@@ -470,14 +485,12 @@ function CalendarPage() {
                 >
                   <Box
                     sx={{
-                      width: 30,
+                      minWidth: 30,
                       height: 30,
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: "50%",
-                      bgcolor: isToday ? "primary.main" : "transparent",
-                      color: isToday ? "primary.contrastText" : "text.primary",
+                      justifyContent: "flex-start",
+                      color: isToday ? "primary.main" : "text.primary",
                     }}
                   >
                     <Typography
@@ -497,29 +510,6 @@ function CalendarPage() {
                       alignItems: "center",
                     }}
                   >
-                    {taskCount > 0 && (
-                      <Box
-                        title={`${taskCount} tarea${
-                          taskCount === 1 ? "" : "s"
-                        }`}
-                        sx={{
-                          minWidth: 22,
-                          height: 22,
-                          px: 0.5,
-                          borderRadius: "50%",
-                          bgcolor: "secondary.main",
-                          color: "secondary.contrastText",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 12,
-                          fontWeight: 800,
-                        }}
-                      >
-                        {taskCount}
-                      </Box>
-                    )}
-
                     {dateTasks.length > 0 ? (
                       <Box
                         title={`${dateTasks.length} ${
@@ -575,8 +565,8 @@ function CalendarPage() {
                   <Box
                     sx={{
                       borderRadius: 1.5,
-                      px: 1.25,
-                      py: 1,
+                      px: 1.5,
+                      py: 1.25,
                       bgcolor:
                         mainReservation.status === "confirmed"
                           ? "success.main"
@@ -694,6 +684,17 @@ function CalendarPage() {
           backgroundColor="error.main"
           textColor="common.white"
         />
+        <Stack
+          direction="row"
+          spacing={0.5}
+          sx={{
+            alignItems: "center",
+          }}
+        >
+          <AssignmentTurnedInOutlinedIcon color="secondary" fontSize="small" />
+
+          <Typography variant="body2">Tareas</Typography>
+        </Stack>
       </Stack>
 
       <CalendarDayDetailsDialog
@@ -705,6 +706,11 @@ function CalendarPage() {
         onOpenReservation={(reservationId) => {
           setDetailsDialogOpen(false);
           navigate(`/reservations/${reservationId}`);
+        }}
+        onOpenTask={(taskId) => {
+          setDetailsDialogOpen(false);
+
+          navigate(`/tasks?taskId=${taskId}`);
         }}
         onCreateReservation={(date) => {
           setDetailsDialogOpen(false);

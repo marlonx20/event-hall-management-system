@@ -1,6 +1,8 @@
 import AddIcon from "@mui/icons-material/Add";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
+import StarIcon from "@mui/icons-material/Star";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import MessageOutlinedIcon from "@mui/icons-material/MessageOutlined";
@@ -40,14 +42,15 @@ function ResourcesPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const [editingMessage, setEditingMessage] =
-    useState<QuickMessage | null>(null);
+  const [editingMessage, setEditingMessage] = useState<QuickMessage | null>(
+    null,
+  );
 
-  const [messageToDelete, setMessageToDelete] =
-    useState<QuickMessage | null>(null);
+  const [messageToDelete, setMessageToDelete] = useState<QuickMessage | null>(
+    null,
+  );
 
-  const [copyNoticeOpen, setCopyNoticeOpen] =
-    useState(false);
+  const [copyNoticeOpen, setCopyNoticeOpen] = useState(false);
 
   const {
     data: messages = [],
@@ -60,13 +63,9 @@ function ResourcesPage() {
   const updateMutation = useUpdateQuickMessage();
   const deleteMutation = useDeleteQuickMessage();
 
-  const isSaving =
-    createMutation.isPending ||
-    updateMutation.isPending;
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
-  const hasSaveError =
-    createMutation.isError ||
-    updateMutation.isError;
+  const hasSaveError = createMutation.isError || updateMutation.isError;
 
   function openCreateDialog() {
     createMutation.reset();
@@ -93,11 +92,7 @@ function ResourcesPage() {
     setEditingMessage(null);
   }
 
-  function saveMessage(
-    title: string,
-    content: string,
-    displayOrder: number,
-  ) {
+  function saveMessage(title: string, content: string, isFavorite: boolean) {
     if (editingMessage) {
       updateMutation.mutate(
         {
@@ -105,7 +100,7 @@ function ResourcesPage() {
           messageData: {
             title,
             content,
-            display_order: displayOrder,
+            is_favorite: isFavorite,
           },
         },
         {
@@ -120,7 +115,7 @@ function ResourcesPage() {
       {
         title,
         content,
-        display_order: displayOrder,
+        is_favorite: isFavorite,
       },
       {
         onSuccess: closeMessageDialog,
@@ -134,9 +129,7 @@ function ResourcesPage() {
 
       setCopyNoticeOpen(true);
     } catch {
-      window.alert(
-        "No fue posible copiar el mensaje al portapapeles.",
-      );
+      window.alert("No fue posible copiar el mensaje al portapapeles.");
     }
   }
 
@@ -179,8 +172,7 @@ function ResourcesPage() {
               color: "text.secondary",
             }}
           >
-            Copia rápidamente mensajes y fotografías del
-            salón.
+            Copia rápidamente mensajes y fotografías del salón.
           </Typography>
         </Box>
 
@@ -253,147 +245,171 @@ function ResourcesPage() {
             </Alert>
           )}
 
-          {!isLoading &&
-            !isError &&
-            messages.length === 0 && (
-              <Card>
-                <CardContent
+          {!isLoading && !isError && messages.length === 0 && (
+            <Card>
+              <CardContent
+                sx={{
+                  py: 6,
+                  textAlign: "center",
+                }}
+              >
+                <MessageOutlinedIcon
                   sx={{
-                    py: 6,
-                    textAlign: "center",
+                    fontSize: 48,
+                    color: "text.secondary",
+                    mb: 1.5,
+                  }}
+                />
+
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
                   }}
                 >
-                  <MessageOutlinedIcon
+                  Todavía no hay mensajes
+                </Typography>
+
+                <Typography
+                  sx={{
+                    color: "text.secondary",
+                    mb: 2.5,
+                  }}
+                >
+                  Crea el primer mensaje para poder copiarlo rápidamente.
+                </Typography>
+
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={openCreateDialog}
+                >
+                  Nuevo mensaje
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {!isLoading && !isError && messages.length > 0 && (
+            <Grid container spacing={3}>
+              {messages.map((message) => (
+                <Grid
+                  key={message.id}
+                  size={{
+                    xs: 12,
+                    md: 6,
+                    xl: 4,
+                  }}
+                >
+                  <Card
                     sx={{
-                      fontSize: 48,
-                      color: "text.secondary",
-                      mb: 1.5,
-                    }}
-                  />
-
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontWeight: 700,
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
                     }}
                   >
-                    Todavía no hay mensajes
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      color: "text.secondary",
-                      mb: 2.5,
-                    }}
-                  >
-                    Crea el primer mensaje para poder copiarlo
-                    rápidamente.
-                  </Typography>
-
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={openCreateDialog}
-                  >
-                    Nuevo mensaje
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-          {!isLoading &&
-            !isError &&
-            messages.length > 0 && (
-              <Grid container spacing={3}>
-                {messages.map((message) => (
-                  <Grid
-                    key={message.id}
-                    size={{
-                      xs: 12,
-                      md: 6,
-                      xl: 4,
-                    }}
-                  >
-                    <Card
+                    <CardContent
                       sx={{
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
+                        flexGrow: 1,
                       }}
                     >
-                      <CardContent
+                      <Stack
+                        direction="row"
+                        spacing={1}
                         sx={{
-                          flexGrow: 1,
+                          alignItems: "center",
+                          mb: 1.5,
                         }}
                       >
+                        {message.is_favorite && (
+                          <StarIcon color="warning" fontSize="small" />
+                        )}
+
                         <Typography
                           variant="h6"
                           sx={{
                             fontWeight: 700,
-                            mb: 1.5,
                           }}
                         >
                           {message.title}
                         </Typography>
+                      </Stack>
 
-                        <Typography
-                          sx={{
-                            color: "text.secondary",
-                            whiteSpace: "pre-wrap",
-                            overflowWrap: "anywhere",
-                          }}
-                        >
-                          {message.content}
-                        </Typography>
-                      </CardContent>
-
-                      <CardActions
+                      <Typography
                         sx={{
-                          px: 2,
-                          pb: 2,
-                          justifyContent: "space-between",
+                          color: "text.secondary",
+                          whiteSpace: "pre-wrap",
+                          overflowWrap: "anywhere",
                         }}
                       >
-                        <Button
-                          startIcon={<ContentCopyIcon />}
+                        {message.content}
+                      </Typography>
+                    </CardContent>
+
+                    <CardActions
+                      sx={{
+                        px: 2,
+                        pb: 2,
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Button
+                        startIcon={<ContentCopyIcon />}
+                        onClick={() => {
+                          void copyMessage(message.content);
+                        }}
+                      >
+                        Copiar
+                      </Button>
+
+                      <Stack direction="row" spacing={0.5}>
+                        <IconButton
+                          aria-label={`Editar ${message.title}`}
                           onClick={() => {
-                            void copyMessage(
-                              message.content,
-                            );
+                            openEditDialog(message);
                           }}
                         >
-                          Copiar
-                        </Button>
+                          <EditOutlinedIcon />
+                        </IconButton>
 
-                        <Stack
-                          direction="row"
-                          spacing={0.5}
+                        <IconButton
+                          aria-label={`Eliminar ${message.title}`}
+                          color="error"
+                          onClick={() => {
+                            setMessageToDelete(message);
+                          }}
                         >
-                          <IconButton
-                            aria-label={`Editar ${message.title}`}
-                            onClick={() => {
-                              openEditDialog(message);
-                            }}
-                          >
-                            <EditOutlinedIcon />
-                          </IconButton>
-
-                          <IconButton
-                            aria-label={`Eliminar ${message.title}`}
-                            color="error"
-                            onClick={() => {
-                              setMessageToDelete(message);
-                            }}
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </Stack>
-                      </CardActions>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            )}
+                          <DeleteOutlineIcon />
+                        </IconButton>
+                        <IconButton
+                          aria-label={
+                            message.is_favorite
+                              ? `Quitar ${message.title} de favoritos`
+                              : `Marcar ${message.title} como favorito`
+                          }
+                          color={message.is_favorite ? "warning" : "default"}
+                          onClick={() => {
+                            updateMutation.mutate({
+                              messageId: message.id,
+                              messageData: {
+                                is_favorite: !message.is_favorite,
+                              },
+                            });
+                          }}
+                        >
+                          {message.is_favorite ? (
+                            <StarIcon />
+                          ) : (
+                            <StarBorderIcon />
+                          )}
+                        </IconButton>
+                      </Stack>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
         </>
       )}
 
@@ -416,17 +432,12 @@ function ResourcesPage() {
           }
         }}
       >
-        <DialogTitle>
-          Eliminar mensaje
-        </DialogTitle>
+        <DialogTitle>Eliminar mensaje</DialogTitle>
 
         <DialogContent>
           <Typography>
             ¿Seguro que deseas eliminar el mensaje{" "}
-            <strong>
-              {messageToDelete?.title}
-            </strong>
-            ?
+            <strong>{messageToDelete?.title}</strong>?
           </Typography>
         </DialogContent>
 
@@ -447,9 +458,7 @@ function ResourcesPage() {
             disabled={deleteMutation.isPending}
             onClick={confirmDelete}
           >
-            {deleteMutation.isPending
-              ? "Eliminando..."
-              : "Eliminar"}
+            {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
           </Button>
         </DialogActions>
       </Dialog>

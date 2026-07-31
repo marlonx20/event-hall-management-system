@@ -24,6 +24,13 @@ def create_payment(
     return payment
 
 
+def get_payment(
+    db: Session,
+    payment_id: int,
+) -> Payment | None:
+    return db.get(Payment, payment_id)
+
+
 def get_payments_by_reservation(
     db: Session,
     reservation_id: int,

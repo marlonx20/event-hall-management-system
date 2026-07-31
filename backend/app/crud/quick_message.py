@@ -31,7 +31,7 @@ def get_quick_messages(
         select(QuickMessage)
         .where(QuickMessage.venue_id == venue_id)
         .order_by(
-            QuickMessage.display_order,
+            QuickMessage.is_favorite.desc(),
             QuickMessage.title,
             QuickMessage.id,
         )

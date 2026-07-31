@@ -1,10 +1,19 @@
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.orm import Session
 
 from app.models.task import Task
 from app.utils.date_utils import get_next_month_start
+
+
+def task_priority_order():
+    return case(
+        (Task.priority == "HIGH", 1),
+        (Task.priority == "MEDIUM", 2),
+        (Task.priority == "LOW", 3),
+        else_=4,
+    )
 
 
 def create_task(
@@ -36,6 +45,8 @@ def get_tasks(
         statement = statement.where(Task.due_date == due_date)
 
     statement = statement.order_by(
+        task_priority_order(),
+        Task.due_date.is_(None),
         Task.due_date,
         Task.id,
     )
@@ -75,6 +86,7 @@ def get_tasks_by_month(
             Task.due_date < next_month_start,
         )
         .order_by(
+            task_priority_order(),
             Task.due_date,
             Task.id,
         )

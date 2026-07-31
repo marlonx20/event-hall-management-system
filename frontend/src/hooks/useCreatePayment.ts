@@ -1,24 +1,56 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 
-import { createReservationPayment } from "../services/paymentService";
+import {
+  createReservationPayment,
+  uploadPaymentReceipt,
+} from "../services/paymentService";
 import type { PaymentCreate } from "../types/payment";
 
 interface CreatePaymentVariables {
   reservationId: number;
   paymentData: PaymentCreate;
+  paymentReceiptFile: File | null;
 }
 
 export function useCreatePayment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ reservationId, paymentData }: CreatePaymentVariables) =>
-      createReservationPayment(reservationId, paymentData),
+    mutationFn: async ({
+      reservationId,
+      paymentData,
+      paymentReceiptFile,
+    }: CreatePaymentVariables) => {
+      const payment =
+        await createReservationPayment(
+          reservationId,
+          paymentData,
+        );
+
+      if (
+        paymentData.method === "transfer" &&
+        paymentReceiptFile
+      ) {
+        await uploadPaymentReceipt(
+          reservationId,
+          payment.id,
+          paymentReceiptFile,
+        );
+      }
+
+      return payment;
+    },
 
     onSuccess: async (_, variables) => {
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["reservations", variables.reservationId],
+          queryKey: [
+            "reservations",
+            variables.reservationId,
+          ],
         }),
         queryClient.invalidateQueries({
           queryKey: ["reservations"],
@@ -27,7 +59,11 @@ export function useCreatePayment() {
           queryKey: ["dashboard"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["reservations", variables.reservationId, "payments"],
+          queryKey: [
+            "reservations",
+            variables.reservationId,
+            "payments",
+          ],
         }),
       ]);
     },

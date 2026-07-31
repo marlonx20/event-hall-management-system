@@ -11,6 +11,7 @@ export interface ReservationFormData {
   eventType: string;
   guestCount: number | null;
   hasBouncyCastle: boolean | null;
+  totalPrice: number | null;
 
   specialRequirements: string;
   internalNotes: string;
@@ -19,6 +20,7 @@ export interface ReservationFormData {
   paymentMethod: "" | "cash" | "transfer";
   paymentDate: Dayjs | null;
   paymentReference: string;
+  paymentReceiptFile: File | null;
 }
 
 export const initialReservationFormData: ReservationFormData = {
@@ -32,6 +34,8 @@ export const initialReservationFormData: ReservationFormData = {
   guestCount: null,
   hasBouncyCastle: null,
 
+  totalPrice: null,
+
   specialRequirements: "",
   internalNotes: "",
 
@@ -39,4 +43,5 @@ export const initialReservationFormData: ReservationFormData = {
   paymentMethod: "",
   paymentDate: null,
   paymentReference: "",
+  paymentReceiptFile: null,
 };

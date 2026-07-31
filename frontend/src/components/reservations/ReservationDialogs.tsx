@@ -8,6 +8,8 @@ import {
   useSaveClosingCharges,
 } from "../../hooks/useFinishReservation";
 import { useReservationPayments } from "../../hooks/useReservationPayments";
+import { useSnackbar } from "../../hooks/useSnackbar";
+import { translateApiError } from "../../utils/translateApiError";
 import CancelReservationDialog from "./CancelReservationDialog";
 import FinishReservationDialog from "./FinishReservationDialog";
 import RegisterPaymentDialog from "./RegisterPaymentDialog";
@@ -35,17 +37,12 @@ function ReservationDialogs({
   onCloseCancelDialog,
   onCloseFinishDialog,
 }: ReservationDialogsProps) {
-  const createPaymentMutation =
-    useCreatePayment();
+  const { showSnackbar } = useSnackbar();
 
-  const cancelMutation =
-    useCancelReservation();
-
-  const finishMutation =
-    useFinishReservation();
-
-  const saveClosingChargesMutation =
-    useSaveClosingCharges();
+  const createPaymentMutation = useCreatePayment();
+  const cancelMutation = useCancelReservation();
+  const finishMutation = useFinishReservation();
+  const saveClosingChargesMutation = useSaveClosingCharges();
 
   const { data: payments = [] } =
     useReservationPayments(reservation.id);
@@ -58,28 +55,28 @@ function ReservationDialogs({
     if (paymentDialogOpen) {
       createPaymentMutation.reset();
     }
-  }, [paymentDialogOpen]);
+  }, [paymentDialogOpen, createPaymentMutation]);
 
   useEffect(() => {
     if (cancelDialogOpen) {
       cancelMutation.reset();
     }
-  }, [cancelDialogOpen]);
+  }, [cancelDialogOpen, cancelMutation]);
 
   useEffect(() => {
     if (finishDialogOpen) {
       saveClosingChargesMutation.reset();
       finishMutation.reset();
     }
-  }, [finishDialogOpen]);
+  }, [
+    finishDialogOpen,
+    saveClosingChargesMutation,
+    finishMutation,
+  ]);
 
   const closingOperationIsPending =
     saveClosingChargesMutation.isPending ||
     finishMutation.isPending;
-
-  const closingOperationHasError =
-    saveClosingChargesMutation.isError ||
-    finishMutation.isError;
 
   return (
     <>
@@ -90,7 +87,6 @@ function ReservationDialogs({
         )}
         reservationStatus={reservation.status}
         isSaving={createPaymentMutation.isPending}
-        hasError={createPaymentMutation.isError}
         hasDeposit={hasDeposit}
         onClose={() => {
           if (!createPaymentMutation.isPending) {
@@ -103,19 +99,26 @@ function ReservationDialogs({
               reservationId: reservation.id,
               paymentData: {
                 amount: paymentData.amount,
-                payment_date:
-                  paymentData.paymentDate.format(
-                    "YYYY-MM-DD",
-                  ),
+                payment_date: paymentData.paymentDate.format("YYYY-MM-DD"),
                 method: paymentData.method,
                 concept: paymentData.concept,
-                reference:
-                  paymentData.reference || null,
+                reference: paymentData.reference || null,
               },
+              paymentReceiptFile: paymentData.receiptFile,
             },
             {
               onSuccess: () => {
                 onClosePaymentDialog();
+                showSnackbar({
+                  severity: "success",
+                  message: "Pago registrado correctamente.",
+                });
+              },
+              onError: (error) => {
+                showSnackbar({
+                  severity: "error",
+                  message: translateApiError(error, "No fue posible registrar el pago."),
+                });
               },
             },
           );
@@ -125,48 +128,38 @@ function ReservationDialogs({
       <CancelReservationDialog
         open={cancelDialogOpen}
         isSaving={cancelMutation.isPending}
-        hasError={cancelMutation.isError}
         onClose={() => {
           if (!cancelMutation.isPending) {
             onCloseCancelDialog();
           }
         }}
         onConfirm={() => {
-          cancelMutation.mutate(
-            reservation.id,
-            {
-              onSuccess: () => {
-                onCloseCancelDialog();
-              },
+          cancelMutation.mutate(reservation.id, {
+            onSuccess: () => {
+              onCloseCancelDialog();
+              showSnackbar({
+                severity: "success",
+                message: "Reservación cancelada correctamente.",
+              });
             },
-          );
+            onError: (error) => {
+              showSnackbar({
+                severity: "error",
+                message: translateApiError(error, "No fue posible cancelar la reservación."),
+              });
+            },
+          });
         }}
       />
 
       <FinishReservationDialog
         open={finishDialogOpen}
         extraHourPrice={extraHourPrice}
-        currentRemainingBalance={Number(
-          reservation.remaining_balance,
-        )}
-        currentExtraHours={Number(
-          reservation.extra_hours ?? 0,
-        )}
-        currentDamageDescription={
-          reservation.damage_description ?? ""
-        }
-        currentDamageCharge={Number(
-          reservation.damage_charge ?? 0,
-        )}
+        currentRemainingBalance={Number(reservation.remaining_balance)}
+        currentExtraHours={Number(reservation.extra_hours ?? 0)}
+        currentDamageDescription={reservation.damage_description ?? ""}
+        currentDamageCharge={Number(reservation.damage_charge ?? 0)}
         isSaving={closingOperationIsPending}
-        hasError={closingOperationHasError}
-        errorMessage={
-          saveClosingChargesMutation.isError
-            ? "No fue posible guardar los cargos adicionales."
-            : finishMutation.isError
-              ? "No fue posible finalizar el evento."
-              : null
-        }
         onClose={() => {
           if (!closingOperationIsPending) {
             onCloseFinishDialog();
@@ -178,15 +171,23 @@ function ReservationDialogs({
               reservationId: reservation.id,
               updateData: {
                 extra_hours: data.extraHours,
-                damage_description:
-                  data.damageDescription || null,
-                damage_charge:
-                  data.damageCharge,
+                damage_description: data.damageDescription || null,
+                damage_charge: data.damageCharge,
               },
             },
             {
               onSuccess: () => {
                 onCloseFinishDialog();
+                showSnackbar({
+                  severity: "success",
+                  message: "Cargos adicionales guardados correctamente.",
+                });
+              },
+              onError: (error) => {
+                showSnackbar({
+                  severity: "error",
+                  message: translateApiError(error, "No fue posible guardar los cargos adicionales."),
+                });
               },
             },
           );
@@ -196,13 +197,22 @@ function ReservationDialogs({
             {
               reservationId: reservation.id,
               finishData: {
-                final_comments:
-                  data.finalComments || null,
+                final_comments: data.finalComments || null,
               },
             },
             {
               onSuccess: () => {
                 onCloseFinishDialog();
+                showSnackbar({
+                  severity: "success",
+                  message: "Evento finalizado correctamente.",
+                });
+              },
+              onError: (error) => {
+                showSnackbar({
+                  severity: "error",
+                  message: translateApiError(error, "No fue posible finalizar el evento."),
+                });
               },
             },
           );

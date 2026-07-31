@@ -8,8 +8,12 @@ class QuickMessageCreate(BaseModel):
         min_length=1,
         max_length=150,
     )
-    content: str = Field(min_length=1)
-    display_order: int = Field(default=0, ge=0)
+
+    content: str = Field(
+        min_length=1,
+    )
+
+    is_favorite: bool = False
 
 
 class QuickMessageUpdate(BaseModel):
@@ -18,14 +22,13 @@ class QuickMessageUpdate(BaseModel):
         min_length=1,
         max_length=150,
     )
+
     content: str | None = Field(
         default=None,
         min_length=1,
     )
-    display_order: int | None = Field(
-        default=None,
-        ge=0,
-    )
+
+    is_favorite: bool | None = None
 
 
 class QuickMessageRead(BaseModel):
@@ -33,8 +36,10 @@ class QuickMessageRead(BaseModel):
     venue_id: int
     title: str
     content: str
-    display_order: int
+    is_favorite: bool
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes": True,
+    }

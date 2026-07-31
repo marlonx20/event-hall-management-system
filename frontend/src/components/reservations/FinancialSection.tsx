@@ -65,54 +65,82 @@ function FinancialSection({
   }
 
   const basePrice = Number(venue.base_price);
+
   const bouncyCastleCost = Number(
     venue.bouncy_castle_cost,
   );
 
-  const totalPrice =
+  const suggestedPrice =
     formData.hasBouncyCastle === null
       ? null
-      : formData.hasBouncyCastle
-        ? basePrice
-        : basePrice - bouncyCastleCost;
+      : basePrice +
+        (formData.hasBouncyCastle
+          ? bouncyCastleCost
+          : 0);
 
   const remainingBalance =
-    totalPrice === null
+    formData.totalPrice === null
       ? 0
       : Math.max(
-          totalPrice - formData.depositAmount,
+          formData.totalPrice -
+            formData.depositAmount,
           0,
         );
 
   const depositIsTooHigh =
-    totalPrice !== null &&
-    formData.depositAmount > totalPrice;
+    formData.totalPrice !== null &&
+    formData.depositAmount >
+      formData.totalPrice;
 
   return (
     <FormSection title="4. Información financiera">
       <Stack spacing={2.5}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 2,
-          }}
-        >
-          <Typography color="text.secondary">
-            Precio total del salón
-          </Typography>
+        <TextField
+          fullWidth
+          type="number"
+          label="Precio total"
+          value={formData.totalPrice ?? ""}
+          disabled={
+            formData.hasBouncyCastle === null
+          }
+          onChange={(event) => {
+            const text = event.target.value;
 
-          <Typography
-            sx={{
-              fontWeight: 800,
-              fontSize: 20,
-            }}
-          >
-            {totalPrice === null
-              ? "Selecciona el brincolín"
-              : formatCurrency(totalPrice)}
-          </Typography>
-        </Box>
+            if (text === "") {
+              onChange("totalPrice", null);
+              return;
+            }
+
+            const value = Number(text);
+
+            onChange(
+              "totalPrice",
+              Number.isNaN(value) || value < 0
+                ? null
+                : value,
+            );
+          }}
+          helperText={
+            suggestedPrice === null
+              ? "Selecciona primero si incluye brincolín."
+              : `Precio sugerido: ${formatCurrency(
+                  suggestedPrice,
+                )}`
+          }
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  $
+                </InputAdornment>
+              ),
+            },
+            htmlInput: {
+              min: 0,
+              step: 50,
+            },
+          }}
+        />
 
         <TextField
           fullWidth
@@ -123,7 +151,7 @@ function FinancialSection({
               ? ""
               : formData.depositAmount
           }
-          disabled={totalPrice === null}
+          disabled={formData.totalPrice === null}
           error={depositIsTooHigh}
           helperText={
             depositIsTooHigh
@@ -142,7 +170,9 @@ function FinancialSection({
 
             onChange(
               "depositAmount",
-              Number.isNaN(value) || value < 0 ? 0 : value,
+              Number.isNaN(value) || value < 0
+                ? 0
+                : value,
             );
           }}
           slotProps={{
@@ -184,9 +214,11 @@ function FinancialSection({
                   : "success.main",
             }}
           >
-            {totalPrice === null
+            {formData.totalPrice === null
               ? "—"
-              : formatCurrency(remainingBalance)}
+              : formatCurrency(
+                  remainingBalance,
+                )}
           </Typography>
         </Box>
 

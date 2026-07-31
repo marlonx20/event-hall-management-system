@@ -24,6 +24,8 @@ interface CalendarDayDetailsDialogProps {
 
   onOpenReservation: (reservationId: number) => void;
 
+  onOpenTask: (taskId: number) => void;
+
   onCreateReservation: (date: string) => void;
 
   onCreateTask: (date: string) => void;
@@ -34,6 +36,7 @@ function CalendarDayDetailsDialog({
   calendarDay,
   onClose,
   onOpenReservation,
+  onOpenTask,
   onCreateReservation,
   onCreateTask,
 }: CalendarDayDetailsDialogProps) {
@@ -90,11 +93,10 @@ function CalendarDayDetailsDialog({
                     onClick={() => {
                       if (activity.type === "reservation") {
                         onOpenReservation(activity.id);
+                        return;
                       }
 
-                      // Las tareas se
-                      // conectarán cuando
-                      // exista su pantalla.
+                      onOpenTask(activity.id);
                     }}
                   />
                 ))}
