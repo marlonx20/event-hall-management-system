@@ -25,10 +25,11 @@ def register_payment(
         raise ValueError("Cannot register a payment for a finished reservation")
 
     if reservation.status == ReservationStatus.PENDING and payment_data.concept in {
+        PaymentConcept.ADDITIONAL_CHARGES,
         PaymentConcept.EXTRA_HOURS,
         PaymentConcept.DAMAGES,
     }:
-        raise ValueError("Extra hours and damage payments require a confirmed reservation")
+        raise ValueError("Additional charges payments require a confirmed reservation")
 
     existing_payments = payment_crud.get_payments_by_reservation(
         db,
@@ -44,10 +45,16 @@ def register_payment(
         raise ValueError("Payment amount exceeds remaining balance")
 
     if (
-        payment_data.concept == PaymentConcept.FINAL_PAYMENT
+        payment_data.concept
+        in {
+            PaymentConcept.FINAL_PAYMENT,
+            PaymentConcept.ADDITIONAL_CHARGES,
+        }
         and payment_data.amount != remaining_balance
     ):
-        raise ValueError("Final payment must cover the entire remaining balance")
+        raise ValueError(
+            "Final payment and additional charges payment must cover the entire remaining balance"
+        )
 
     should_confirm = reservation.status == ReservationStatus.PENDING and payment_data.concept in {
         PaymentConcept.DEPOSIT,

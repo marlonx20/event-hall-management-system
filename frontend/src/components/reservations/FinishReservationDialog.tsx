@@ -172,6 +172,20 @@ function FinishReservationDialog({
   }
 
   function handleFinish() {
+    if (chargesChanged) {
+      setValidationMessage(
+        "Guarda primero los cambios en los cargos adicionales.",
+      );
+      return;
+    }
+
+    if (!balanceIsPaid) {
+      setValidationMessage(
+        "La reservación debe estar completamente pagada antes de finalizarla.",
+      );
+      return;
+    }
+
     setValidationMessage(null);
 
     onFinish({
@@ -202,16 +216,23 @@ function FinishReservationDialog({
             </Alert>
           )}
 
-          {balanceIsPaid ? (
+          {balanceIsPaid && !chargesChanged ? (
             <Alert severity="success">
-              Todos los pagos están completos. Ya
-              puedes finalizar el evento.
+              Todos los pagos están completos. Puedes
+              finalizar el evento o registrar cargos
+              adicionales si fueron necesarios.
+            </Alert>
+          ) : balanceIsPaid && chargesChanged ? (
+            <Alert severity="warning">
+              Guarda los cargos adicionales. Si generan
+              un nuevo saldo, deberás registrar el pago
+              correspondiente antes de finalizar.
             </Alert>
           ) : (
             <Alert severity="warning">
               Todavía no puedes finalizar el evento.
-              Guarda los cargos adicionales y registra
-              la liquidación restante.
+              Guarda los cargos adicionales pendientes y
+              registra el pago del saldo restante.
             </Alert>
           )}
 
@@ -229,10 +250,7 @@ function FinishReservationDialog({
             type="number"
             label="Horas extra"
             value={extraHours}
-            disabled={
-              isSaving ||
-              balanceIsPaid
-            }
+            disabled={isSaving}
             onChange={(event) => {
               const value =
                 event.target.value;
@@ -254,13 +272,9 @@ function FinishReservationDialog({
                 step: 0.5,
               },
             }}
-            helperText={
-              balanceIsPaid
-                ? "Las horas extra ya no pueden modificarse porque el saldo está liquidado."
-                : `Precio por hora: ${formatCurrency(
-                    extraHourPrice,
-                  )}`
-            }
+            helperText={`Precio por hora: ${formatCurrency(
+              extraHourPrice,
+            )}`}
           />
 
           {numericExtraHours > 0 && (
@@ -296,19 +310,14 @@ function FinishReservationDialog({
             minRows={3}
             label="Descripción de desperfectos"
             value={damageDescription}
-            disabled={
-              isSaving ||
-              balanceIsPaid
-            }
+            disabled={isSaving}
             error={
               hasDamageChargeWithoutDescription
             }
             helperText={
-              balanceIsPaid
-                ? "Los desperfectos ya no pueden modificarse porque el saldo está liquidado."
-                : hasDamageChargeWithoutDescription
-                  ? "Describe el desperfecto que genera el cobro."
-                  : "Opcional si no hubo desperfectos."
+              hasDamageChargeWithoutDescription
+                ? "Describe el desperfecto que genera el cobro."
+                : "Opcional si no hubo desperfectos."
             }
             onChange={(event) => {
               setDamageDescription(
@@ -325,10 +334,7 @@ function FinishReservationDialog({
             type="number"
             label="Cargo por desperfectos"
             value={damageCharge}
-            disabled={
-              isSaving ||
-              balanceIsPaid
-            }
+            disabled={isSaving}
             onChange={(event) => {
               const value =
                 event.target.value;
@@ -393,7 +399,7 @@ function FinishReservationDialog({
             </>
           )}
 
-          {balanceIsPaid && (
+          {balanceIsPaid && !chargesChanged && (
             <>
               <Divider />
 
@@ -439,7 +445,20 @@ function FinishReservationDialog({
           Cancelar
         </Button>
 
-        {balanceIsPaid ? (
+        {chargesChanged ? (
+          <Button
+            variant="contained"
+            disabled={
+              isSaving ||
+              hasDamageChargeWithoutDescription
+            }
+            onClick={handleSaveCharges}
+          >
+            {isSaving
+              ? "Guardando..."
+              : "Guardar cargos"}
+          </Button>
+        ) : balanceIsPaid ? (
           <Button
             variant="contained"
             disabled={isSaving}
@@ -452,12 +471,9 @@ function FinishReservationDialog({
         ) : (
           <Button
             variant="contained"
-            disabled={isSaving}
-            onClick={handleSaveCharges}
+            disabled
           >
-            {isSaving
-              ? "Guardando..."
-              : "Guardar cargos"}
+            Saldo pendiente
           </Button>
         )}
       </DialogActions>

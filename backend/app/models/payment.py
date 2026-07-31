@@ -21,6 +21,7 @@ class PaymentMethod(StrEnum):
 class PaymentConcept(StrEnum):
     DEPOSIT = "deposit"
     FINAL_PAYMENT = "final_payment"
+    ADDITIONAL_CHARGES = "additional_charges"
     EXTRA_HOURS = "extra_hours"
     DAMAGES = "damages"
 

@@ -1,7 +1,4 @@
-import {
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
   finishReservation,
@@ -13,8 +10,6 @@ import type {
 } from "../types/reservation";
 
 export function useSaveClosingCharges() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({
       reservationId,
@@ -27,35 +22,10 @@ export function useSaveClosingCharges() {
         reservationId,
         updateData,
       ),
-
-    onSuccess: async (reservation) => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["reservations"],
-        }),
-
-        queryClient.invalidateQueries({
-          queryKey: [
-            "reservations",
-            reservation.id,
-          ],
-        }),
-
-        queryClient.invalidateQueries({
-          queryKey: ["dashboard"],
-        }),
-
-        queryClient.invalidateQueries({
-          queryKey: ["calendar"],
-        }),
-      ]);
-    },
   });
 }
 
 export function useFinishReservation() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({
       reservationId,
@@ -68,28 +38,5 @@ export function useFinishReservation() {
         reservationId,
         finishData,
       ),
-
-    onSuccess: async (reservation) => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["reservations"],
-        }),
-
-        queryClient.invalidateQueries({
-          queryKey: [
-            "reservations",
-            reservation.id,
-          ],
-        }),
-
-        queryClient.invalidateQueries({
-          queryKey: ["dashboard"],
-        }),
-
-        queryClient.invalidateQueries({
-          queryKey: ["calendar"],
-        }),
-      ]);
-    },
   });
 }

@@ -28,6 +28,11 @@ function ReservationActionsCard({
     return null;
   }
 
+  const hasRemainingBalance =
+    Number(
+      reservation.remaining_balance,
+    ) > 0;
+
   return (
     <Card>
       <CardContent sx={{ p: 3 }}>
@@ -44,11 +49,7 @@ function ReservationActionsCard({
         <Stack spacing={1.5}>
           <Button
             variant="contained"
-            disabled={
-              Number(
-                reservation.remaining_balance,
-              ) <= 0
-            }
+            disabled={!hasRemainingBalance}
             onClick={onRegisterPayment}
           >
             Registrar pago
@@ -69,7 +70,7 @@ function ReservationActionsCard({
             }
             onClick={onFinish}
           >
-            Finalizar evento
+            Cierre del evento
           </Button>
         </Stack>
       </CardContent>

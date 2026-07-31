@@ -1,7 +1,4 @@
-import {
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
   createReservationPayment,
@@ -16,8 +13,6 @@ interface CreatePaymentVariables {
 }
 
 export function useCreatePayment() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({
       reservationId,
@@ -42,30 +37,6 @@ export function useCreatePayment() {
       }
 
       return payment;
-    },
-
-    onSuccess: async (_, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: [
-            "reservations",
-            variables.reservationId,
-          ],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["reservations"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["dashboard"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: [
-            "reservations",
-            variables.reservationId,
-            "payments",
-          ],
-        }),
-      ]);
     },
   });
 }
