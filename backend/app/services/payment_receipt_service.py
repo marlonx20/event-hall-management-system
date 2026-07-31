@@ -3,11 +3,8 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
+from app.core.paths import PAYMENT_RECEIPTS_DIRECTORY
 from app.models.payment import Payment
-
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-
-PAYMENT_RECEIPTS_DIRECTORY = PROJECT_ROOT / "storage" / "payment_receipts"
 
 ALLOWED_CONTENT_TYPES = {
     "image/jpeg": ".jpg",
@@ -104,7 +101,9 @@ def delete_receipt(
     db: Session,
     payment: Payment,
 ) -> Payment:
-    file_path = get_receipt_path(payment)
+    file_path = get_receipt_path(
+        payment,
+    )
 
     try:
         payment.receipt_filename = None

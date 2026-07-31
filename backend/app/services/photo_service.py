@@ -1,15 +1,12 @@
-from pathlib import Path
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
 from app.core.constants import DEFAULT_VENUE_ID
+from app.core.paths import PHOTOS_DIRECTORY
 from app.crud import photo as photo_crud
 from app.models.photo import Photo
 from app.schemas.photo import PhotoRead
-
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-PHOTOS_DIRECTORY = PROJECT_ROOT / "storage" / "photos"
 
 ALLOWED_CONTENT_TYPES = {
     "image/jpeg": ".jpg",
@@ -27,14 +24,16 @@ def ensure_photos_directory() -> None:
     )
 
 
-def build_photo_response(photo: Photo) -> PhotoRead:
+def build_photo_response(
+    photo: Photo,
+) -> PhotoRead:
     return PhotoRead(
         id=photo.id,
         original_name=photo.original_name,
         content_type=photo.content_type,
         is_favorite=photo.is_favorite,
         created_at=photo.created_at,
-        url=f"/storage/photos/{photo.filename}",
+        url=(f"/storage/photos/{photo.filename}"),
     )
 
 
@@ -44,16 +43,24 @@ def save_photo(
     content_type: str,
     file_content: bytes,
 ) -> Photo:
-    extension = ALLOWED_CONTENT_TYPES.get(content_type)
+    extension = ALLOWED_CONTENT_TYPES.get(
+        content_type,
+    )
 
     if extension is None:
-        raise ValueError("Only JPEG, PNG and WebP images are allowed")
+        raise ValueError(
+            "Only JPEG, PNG and WebP images are allowed",
+        )
 
     if not file_content:
-        raise ValueError("The uploaded photo is empty")
+        raise ValueError(
+            "The uploaded photo is empty",
+        )
 
     if len(file_content) > MAX_PHOTO_SIZE:
-        raise ValueError("The photo cannot exceed 10 MB")
+        raise ValueError(
+            "The photo cannot exceed 10 MB",
+        )
 
     ensure_photos_directory()
 
@@ -61,7 +68,9 @@ def save_photo(
     file_path = PHOTOS_DIRECTORY / filename
 
     try:
-        file_path.write_bytes(file_content)
+        file_path.write_bytes(
+            file_content,
+        )
 
         photo = photo_crud.create_photo(
             db,
