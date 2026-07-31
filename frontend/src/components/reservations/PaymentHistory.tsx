@@ -39,6 +39,9 @@ function formatDate(value: string): string {
 
 function getConceptLabel(concept: PaymentConcept): string {
   switch (concept) {
+    case "additional_charges":
+  return "Cargos adicionales";
+    
     case "deposit":
       return "Anticipo";
 
@@ -60,6 +63,9 @@ function getConceptColor(
   concept: PaymentConcept,
 ): "success" | "info" | "warning" | "error" | "default" {
   switch (concept) {
+    case "additional_charges":
+  return "warning";
+    
     case "deposit":
       return "success";
 

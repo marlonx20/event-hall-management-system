@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import type { Dayjs } from "dayjs";
 
 import { useCancelReservation } from "../../hooks/useCancelReservation";
 import { useCreatePayment } from "../../hooks/useCreatePayment";
@@ -8,8 +9,6 @@ import {
 } from "../../hooks/useFinishReservation";
 import { useReservationPayments } from "../../hooks/useReservationPayments";
 import { useSnackbar } from "../../hooks/useSnackbar";
-import type { Dayjs } from "dayjs";
-
 import type {
   PaymentConcept,
   PaymentMethod,
@@ -64,6 +63,14 @@ function ReservationDialogs({
   const hasDeposit = payments.some(
     (payment) => payment.concept === "deposit",
   );
+
+  const hasAdditionalCharges =
+    Number(
+      reservation.extra_charge ?? 0,
+    ) > 0 ||
+    Number(
+      reservation.damage_charge ?? 0,
+    ) > 0;
 
   const closingOperationIsPending =
     saveClosingChargesMutation.isPending ||
@@ -253,6 +260,9 @@ function ReservationDialogs({
         reservationStatus={reservation.status}
         isSaving={createPaymentMutation.isPending}
         hasDeposit={hasDeposit}
+        hasAdditionalCharges={
+          hasAdditionalCharges
+        }
         onClose={onClosePaymentDialog}
         onSave={(paymentData) => {
           void handleRegisterPayment(

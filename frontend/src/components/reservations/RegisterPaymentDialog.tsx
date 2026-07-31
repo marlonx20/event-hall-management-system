@@ -27,6 +27,7 @@ import type {
 interface RegisterPaymentDialogProps {
   open: boolean;
   hasDeposit: boolean;
+  hasAdditionalCharges: boolean;
   remainingBalance: number;
   isSaving: boolean;
   reservationStatus:
@@ -45,12 +46,36 @@ interface RegisterPaymentDialogProps {
   }) => void;
 }
 
+function getInitialConcept(
+  reservationStatus:
+    | "pending"
+    | "confirmed"
+    | "finished"
+    | "cancelled",
+  hasDeposit: boolean,
+  hasAdditionalCharges: boolean,
+): PaymentConcept {
+  if (
+    reservationStatus === "pending" &&
+    !hasDeposit
+  ) {
+    return "deposit";
+  }
+
+  if (hasAdditionalCharges) {
+    return "additional_charges";
+  }
+
+  return "final_payment";
+}
+
 function RegisterPaymentDialog({
   open,
   remainingBalance,
   isSaving,
   reservationStatus,
   hasDeposit,
+  hasAdditionalCharges,
   onClose,
   onSave,
 }: RegisterPaymentDialogProps) {
@@ -70,10 +95,11 @@ function RegisterPaymentDialog({
 
   const [concept, setConcept] =
     useState<PaymentConcept>(
-      reservationStatus === "pending" &&
-        !hasDeposit
-        ? "deposit"
-        : "final_payment",
+      getInitialConcept(
+        reservationStatus,
+        hasDeposit,
+        hasAdditionalCharges,
+      ),
     );
 
   const [reference, setReference] =
@@ -93,10 +119,11 @@ function RegisterPaymentDialog({
     setMethod("");
 
     setConcept(
-      reservationStatus === "pending" &&
-        !hasDeposit
-        ? "deposit"
-        : "final_payment",
+      getInitialConcept(
+        reservationStatus,
+        hasDeposit,
+        hasAdditionalCharges,
+      ),
     );
 
     setReference("");
@@ -105,6 +132,7 @@ function RegisterPaymentDialog({
     open,
     reservationStatus,
     hasDeposit,
+    hasAdditionalCharges,
   ]);
 
   const numericAmount =
@@ -112,6 +140,10 @@ function RegisterPaymentDialog({
 
   const amountIsTooHigh =
     numericAmount > remainingBalance;
+
+  const conceptRequiresFullBalance =
+    concept === "final_payment" ||
+    concept === "additional_charges";
 
   function handleSave() {
     if (numericAmount <= 0) {
@@ -143,11 +175,16 @@ function RegisterPaymentDialog({
     }
 
     if (
-      concept === "final_payment" &&
+      conceptRequiresFullBalance &&
       numericAmount !== remainingBalance
     ) {
+      const conceptLabel =
+        concept === "additional_charges"
+          ? "El pago de cargos adicionales"
+          : "La liquidación";
+
       setValidationMessage(
-        `La liquidación debe cubrir exactamente el saldo pendiente: ${new Intl.NumberFormat(
+        `${conceptLabel} debe cubrir exactamente el saldo pendiente: ${new Intl.NumberFormat(
           "es-MX",
           {
             style: "currency",
@@ -316,15 +353,22 @@ function RegisterPaymentDialog({
                 setValidationMessage(null);
               }}
             >
-              {!hasDeposit && (
-                <MenuItem value="deposit">
-                  Anticipo
+              {!hasDeposit &&
+                reservationStatus === "pending" && (
+                  <MenuItem value="deposit">
+                    Anticipo
+                  </MenuItem>
+                )}
+
+              {hasAdditionalCharges ? (
+                <MenuItem value="additional_charges">
+                  Cargos adicionales
+                </MenuItem>
+              ) : (
+                <MenuItem value="final_payment">
+                  Liquidación
                 </MenuItem>
               )}
-
-              <MenuItem value="final_payment">
-                Liquidación
-              </MenuItem>
             </Select>
           </FormControl>
 
