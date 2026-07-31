@@ -5,6 +5,7 @@ import type {
 import {
   createContext,
   useCallback,
+  useContext,
   useMemo,
   useState,
 } from "react";
@@ -35,7 +36,7 @@ interface SnackbarContextValue {
   ) => void;
 }
 
-export const SnackbarContext =
+const SnackbarContext =
   createContext<SnackbarContextValue | null>(null);
 
 export function SnackbarProvider({
@@ -98,4 +99,16 @@ export function SnackbarProvider({
       {children}
     </SnackbarContext.Provider>
   );
+}
+
+export function useSnackbarContext() {
+  const context = useContext(SnackbarContext);
+
+  if (!context) {
+    throw new Error(
+      "useSnackbarContext debe utilizarse dentro de SnackbarProvider.",
+    );
+  }
+
+  return context;
 }
