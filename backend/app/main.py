@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app.api.routes.backups import router as backups_router
 from app.api.routes.calendar import router as calendar_router
 from app.api.routes.customers import router as customers_router
 from app.api.routes.dashboard import router as dashboard_router
@@ -33,6 +34,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(backups_router)
 app.include_router(calendar_router)
 app.include_router(customers_router)
 app.include_router(dashboard_router)
