@@ -340,7 +340,6 @@ function NewReservationPage() {
         <ReservationActions
           validationErrors={validationErrors}
           isSaving={createReservationMutation.isPending}
-          saveError={null}
           onCancel={() => {
             navigate("/reservations");
           }}

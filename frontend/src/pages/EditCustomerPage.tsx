@@ -104,7 +104,6 @@ function EditCustomerPage() {
         isSaving={
           updateCustomerMutation.isPending
         }
-        hasError={false}
         submitLabel="Guardar cambios"
         onCancel={() => {
           navigate(-1);

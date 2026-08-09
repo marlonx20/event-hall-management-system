@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes.backups import router as backups_router
@@ -14,17 +15,27 @@ from app.api.routes.quick_message import router as quick_message_router
 from app.api.routes.reservations import router as reservations_router
 from app.api.routes.tasks import router as tasks_router
 from app.api.routes.venue import router as venue_router
-from app.core.paths import PHOTOS_DIRECTORY, ensure_storage_directories
+from app.core.paths import PHOTOS_DIRECTORY, PROJECT_ROOT, ensure_storage_directories
 from app.db.init_db import create_db
 from app.services.backup_service import apply_pending_restore
+
+FRONTEND_DIST_DIRECTORY = PROJECT_ROOT / "frontend" / "dist"
+
+FRONTEND_ASSETS_DIRECTORY = FRONTEND_DIST_DIRECTORY / "assets"
+
+FRONTEND_INDEX_FILE = FRONTEND_DIST_DIRECTORY / "index.html"
+
 
 ensure_storage_directories()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(
+    app: FastAPI,
+):
     apply_pending_restore()
     create_db()
+
     yield
 
 
@@ -53,9 +64,48 @@ def health_check() -> dict[str, str]:
 
 app.mount(
     "/storage/photos",
-    StaticFiles(directory=PHOTOS_DIRECTORY),
+    StaticFiles(
+        directory=PHOTOS_DIRECTORY,
+    ),
     name="photos",
 )
+
+
+if FRONTEND_ASSETS_DIRECTORY.exists():
+    app.mount(
+        "/assets",
+        StaticFiles(
+            directory=FRONTEND_ASSETS_DIRECTORY,
+        ),
+        name="frontend-assets",
+    )
+
+
+@app.get(
+    "/{full_path:path}",
+    include_in_schema=False,
+)
+def serve_frontend(
+    full_path: str,
+):
+    if not FRONTEND_INDEX_FILE.exists():
+        return {
+            "detail": (
+                "Frontend build not found. Run 'npm run build' inside the frontend directory."
+            )
+        }
+
+    requested_path = FRONTEND_DIST_DIRECTORY / full_path
+
+    if full_path and requested_path.is_file() and FRONTEND_DIST_DIRECTORY in requested_path.parents:
+        return FileResponse(
+            requested_path,
+        )
+
+    return FileResponse(
+        FRONTEND_INDEX_FILE,
+    )
+
 
 app.add_middleware(
     CORSMiddleware,

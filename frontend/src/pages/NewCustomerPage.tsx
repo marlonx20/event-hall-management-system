@@ -90,7 +90,6 @@ function NewCustomerPage() {
         isSaving={
           createCustomerMutation.isPending
         }
-        hasError={false}
         submitLabel="Guardar cliente"
         onCancel={() => {
           navigate(-1);

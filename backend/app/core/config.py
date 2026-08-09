@@ -1,20 +1,18 @@
-from functools import lru_cache
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.paths import DATABASE_FILE
 
 
 class Settings(BaseSettings):
-    database_url: str
-
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
+        extra="ignore",
     )
 
+    @property
+    def database_url(self) -> str:
+        return f"sqlite:///{DATABASE_FILE.as_posix()}"
 
-@lru_cache
-def get_settings() -> Settings:
-    return Settings()  # type: ignore[call-arg]
 
-
-settings = get_settings()
+settings = Settings()
