@@ -16,20 +16,20 @@ from app.api.routes.tasks import router as tasks_router
 from app.api.routes.venue import router as venue_router
 from app.core.paths import PHOTOS_DIRECTORY, ensure_storage_directories
 from app.db.init_db import create_db
+from app.services.backup_service import apply_pending_restore
+
+ensure_storage_directories()
 
 
 @asynccontextmanager
-async def lifespan(
-    app: FastAPI,
-):
-    ensure_storage_directories()
+async def lifespan(app: FastAPI):
+    apply_pending_restore()
     create_db()
-
     yield
 
 
 app = FastAPI(
-    title=("Event Hall Management System API"),
+    title="Event Hall Management System API",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -53,9 +53,7 @@ def health_check() -> dict[str, str]:
 
 app.mount(
     "/storage/photos",
-    StaticFiles(
-        directory=PHOTOS_DIRECTORY,
-    ),
+    StaticFiles(directory=PHOTOS_DIRECTORY),
     name="photos",
 )
 

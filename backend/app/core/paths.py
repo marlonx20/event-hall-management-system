@@ -12,19 +12,15 @@ PAYMENT_RECEIPTS_DIRECTORY = STORAGE_DIRECTORY / "payment_receipts"
 
 BACKUPS_DIRECTORY = STORAGE_DIRECTORY / "backups"
 REPORTS_DIRECTORY = STORAGE_DIRECTORY / "reports"
+PENDING_RESTORE_FILE = STORAGE_DIRECTORY / "pending_restore.zip"
 
 
 def ensure_storage_directories() -> None:
-    directories = (
+    for directory in (
         STORAGE_DIRECTORY,
         PHOTOS_DIRECTORY,
         PAYMENT_RECEIPTS_DIRECTORY,
         BACKUPS_DIRECTORY,
         REPORTS_DIRECTORY,
-    )
-
-    for directory in directories:
-        directory.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+    ):
+        directory.mkdir(parents=True, exist_ok=True)
