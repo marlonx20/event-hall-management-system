@@ -2,7 +2,34 @@ import os
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+def _get_project_root() -> Path:
+    if getattr(
+        sys,
+        "frozen",
+        False,
+    ):
+        meipass = getattr(
+            sys,
+            "_MEIPASS",
+            None,
+        )
+
+        if meipass:
+            return Path(meipass)
+
+        return (
+            Path(
+                sys.executable,
+            )
+            .resolve()
+            .parent
+        )
+
+    return Path(__file__).resolve().parents[3]
+
+
+PROJECT_ROOT = _get_project_root()
 
 
 def _get_application_data_directory() -> Path:

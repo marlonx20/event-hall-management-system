@@ -14,11 +14,14 @@ dependencies = [
     "python-multipart",
 ]
 
+
 [project.optional-dependencies]
 dev = [
     "ruff",
     "pytest",
+    "pyinstaller",
 ]
+
 
 [tool.ruff]
 line-length = 100
@@ -28,6 +31,7 @@ exclude = [
     "alembic",
 ]
 
+
 [tool.ruff.lint]
 select = [
     "E",
@@ -36,8 +40,10 @@ select = [
     "UP",
 ]
 
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
 
 [tool.setuptools.packages.find]
 include = ["app*"]
