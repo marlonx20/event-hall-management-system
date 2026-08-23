@@ -1,18 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
-
 from app.crud import payment as payment_crud
 from app.crud import reservation as reservation_crud
 from app.dependencies.database import get_db
 from app.models.payment import Payment
 from app.schemas.payment import PaymentCreate, PaymentRead
-from app.services import (
-    payment_receipt_service,
-    payment_service,
-)
+from app.services import payment_receipt_service, payment_service
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
 
 router = APIRouter(
     prefix="/reservations/{reservation_id}/payments",
@@ -79,7 +75,10 @@ def create_payment(
         ) from error
 
 
-@router.get("", response_model=list[PaymentRead])
+@router.get(
+    "",
+    response_model=list[PaymentRead],
+)
 def get_payments(
     reservation_id: int,
     db: Annotated[Session, Depends(get_db)],
@@ -111,7 +110,6 @@ async def upload_payment_receipt(
     db: Annotated[Session, Depends(get_db)],
     receipt_file: Annotated[UploadFile, File()],
 ) -> PaymentRead:
-
     payment = get_payment_or_404(
         db,
         reservation_id,
@@ -122,7 +120,7 @@ async def upload_payment_receipt(
 
     if content_type is None:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="The file has no content type",
         )
 
@@ -136,26 +134,27 @@ async def upload_payment_receipt(
             content_type=content_type,
             file_content=content,
         )
-
     except ValueError as error:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error),
         ) from error
-
     finally:
         await receipt_file.close()
 
-    return PaymentRead.model_validate(payment)
+    return PaymentRead.model_validate(
+        payment,
+    )
 
 
-@router.get("/{payment_id}/receipt")
+@router.get(
+    "/{payment_id}/receipt",
+)
 def get_payment_receipt(
     reservation_id: int,
     payment_id: int,
     db: Annotated[Session, Depends(get_db)],
 ) -> FileResponse:
-
     payment = get_payment_or_404(
         db,
         reservation_id,
@@ -168,7 +167,7 @@ def get_payment_receipt(
 
     if file_path is None or not file_path.exists():
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Receipt not found",
         )
 
@@ -176,6 +175,7 @@ def get_payment_receipt(
         path=file_path,
         media_type=payment.receipt_content_type,
         filename=payment.receipt_original_name,
+        content_disposition_type="inline",
     )
 
 
@@ -188,7 +188,6 @@ def delete_payment_receipt(
     payment_id: int,
     db: Annotated[Session, Depends(get_db)],
 ) -> PaymentRead:
-
     payment = get_payment_or_404(
         db,
         reservation_id,
@@ -200,4 +199,6 @@ def delete_payment_receipt(
         payment,
     )
 
-    return PaymentRead.model_validate(payment)
+    return PaymentRead.model_validate(
+        payment,
+    )

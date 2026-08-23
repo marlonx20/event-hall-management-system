@@ -15,6 +15,8 @@ import {
   IconButton,
   Stack,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import dayjs, { type Dayjs } from "dayjs";
 import "dayjs/locale/es";
@@ -47,6 +49,11 @@ function getReservationPriority(status: ReservationStatus): number {
 
 function CalendarPage() {
   const navigate = useNavigate();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(
+    theme.breakpoints.down("sm"),
+  );
 
   const [currentMonth, setCurrentMonth] = useState<Dayjs>(
     dayjs().startOf("month"),
@@ -304,69 +311,77 @@ function CalendarPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            px: 3,
-            py: 2,
+            gap: 1,
+            px: {
+              xs: 1,
+              sm: 2,
+              md: 3,
+            },
+            py: {
+              xs: 1,
+              sm: 2,
+            },
             borderBottom: "1px solid",
             borderColor: "divider",
           }}
         >
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{
-              alignItems: "center",
+          <IconButton
+            aria-label="Mes anterior"
+            onClick={() => {
+              setCurrentMonth((month) =>
+                month.subtract(1, "month"),
+              );
             }}
           >
-            <Stack
-              direction="row"
-              spacing={12}
-              sx={{
-                alignItems: "center",
-              }}
-            >
-              <IconButton
-                aria-label="Mes anterior"
-                onClick={() => {
-                  setCurrentMonth((month) => month.subtract(1, "month"));
-                }}
-              >
-                <ChevronLeftIcon />
-              </IconButton>
+            <ChevronLeftIcon />
+          </IconButton>
 
-              <Typography
-                variant="h6"
-                sx={{
-                  width: 190,
-                  flexShrink: 0,
-                  textAlign: "center",
-                  fontWeight: 700,
-                  textTransform: "capitalize",
-                }}
-              >
-                {currentMonth.format("MMMM [de] YYYY")}
-              </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              flex: 1,
+              textAlign: "center",
+              fontWeight: 700,
+              textTransform: "capitalize",
+              fontSize: {
+                xs: "1rem",
+                sm: "1.25rem",
+              },
+              whiteSpace: "nowrap",
+            }}
+          >
+            {currentMonth.format(
+              isMobile ? "MMMM YYYY" : "MMMM [de] YYYY",
+            )}
+          </Typography>
 
-              <IconButton
-                aria-label="Mes siguiente"
-                onClick={() => {
-                  setCurrentMonth((month) => month.add(1, "month"));
-                }}
-              >
-                <ChevronRightIcon />
-              </IconButton>
-            </Stack>
+          <IconButton
+            aria-label="Mes siguiente"
+            onClick={() => {
+              setCurrentMonth((month) =>
+                month.add(1, "month"),
+              );
+            }}
+          >
+            <ChevronRightIcon />
+          </IconButton>
 
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={currentMonth.isSame(dayjs(), "month")}
-              onClick={() => {
-                setCurrentMonth(dayjs().startOf("month"));
-              }}
-            >
-              Hoy
-            </Button>
-          </Stack>
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={currentMonth.isSame(dayjs(), "month")}
+            onClick={() => {
+              setCurrentMonth(dayjs().startOf("month"));
+            }}
+            sx={{
+              display: {
+                xs: "none",
+                sm: "inline-flex",
+              },
+            }}
+          >
+            Hoy
+          </Button>
         </Box>
 
         <Box
@@ -382,7 +397,10 @@ function CalendarPage() {
             <Box
               key={weekDay}
               sx={{
-                py: 1.5,
+                py: {
+                  xs: 1,
+                  sm: 1.5,
+                },
                 textAlign: "center",
               }}
             >
@@ -391,6 +409,10 @@ function CalendarPage() {
                 sx={{
                   fontWeight: 700,
                   color: "text.secondary",
+                  fontSize: {
+                    xs: "0.7rem",
+                    sm: "0.875rem",
+                  },
                 }}
               >
                 {weekDay}
@@ -444,10 +466,15 @@ function CalendarPage() {
                 }}
                 sx={{
                   minHeight: {
-                    xs: 110,
+                    xs: 62,
+                    sm: 100,
                     md: 145,
                   },
-                  p: 1.25,
+                  p: {
+                    xs: 0.5,
+                    sm: 1,
+                    md: 1.25,
+                  },
                   borderRight: "1px solid",
                   borderBottom: "1px solid",
                   border: isToday ? "2px solid" : undefined,
@@ -455,6 +482,7 @@ function CalendarPage() {
                   borderColor: isToday ? "success.main" : "divider",
                   color: isToday ? "primary.main" : "inherit",
                   cursor: "pointer",
+                  position: "relative",
                   bgcolor: isToday
                     ? "rgba(76, 175, 80, 0.14)"
                     : belongsToCurrentMonth
@@ -478,15 +506,31 @@ function CalendarPage() {
                 <Box
                   sx={{
                     display: "flex",
-                    justifyContent: "space-between",
+                    justifyContent: {
+                      xs: "flex-start",
+                      sm: "space-between",
+                    },
                     alignItems: "center",
-                    mb: 1,
+                    minHeight: {
+                      xs: 24,
+                      sm: "auto",
+                    },
+                    mb: {
+                      xs: 0.5,
+                      sm: 1,
+                    },
                   }}
                 >
                   <Box
                     sx={{
-                      minWidth: 30,
-                      height: 30,
+                      minWidth: {
+                        xs: 22,
+                        sm: 30,
+                      },
+                      height: {
+                        xs: 22,
+                        sm: 30,
+                      },
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "flex-start",
@@ -510,53 +554,83 @@ function CalendarPage() {
                       alignItems: "center",
                     }}
                   >
-                    {dateTasks.length > 0 ? (
+                    {dateTasks.length > 0 && (
                       <Box
                         title={`${dateTasks.length} ${
                           dateTasks.length === 1 ? "tarea" : "tareas"
                         }`}
                         sx={{
-                          minWidth: 27,
-                          height: 24,
-                          px: 0.6,
-                          borderRadius: 1.25,
+                          position: {
+                            xs: "absolute",
+                            sm: "static",
+                          },
+                          top: {
+                            xs: 4,
+                            sm: "auto",
+                          },
+                          right: {
+                            xs: 4,
+                            sm: "auto",
+                          },
+                          minWidth: {
+                            xs: 18,
+                            sm: 27,
+                          },
+                          height: {
+                            xs: 18,
+                            sm: 24,
+                          },
+                          px: {
+                            xs: 0.25,
+                            sm: 0.6,
+                          },
+                          borderRadius: {
+                            xs: 1,
+                            sm: 1.25,
+                          },
                           bgcolor: "secondary.main",
                           color: "secondary.contrastText",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          gap: 0.35,
+                          gap: {
+                            xs: 0,
+                            sm: 0.35,
+                          },
                           boxShadow: 1,
+                          zIndex: 1,
                         }}
                       >
                         <AssignmentTurnedInOutlinedIcon
                           sx={{
-                            fontSize: 15,
+                            fontSize: {
+                              xs: 13,
+                              sm: 15,
+                            },
                           }}
                         />
 
                         <Typography
                           variant="caption"
                           sx={{
+                            display: {
+                              xs:
+                                dateTasks.length > 1
+                                  ? "block"
+                                  : "none",
+                              sm: "block",
+                            },
                             fontWeight: 800,
                             lineHeight: 1,
+                            fontSize: {
+                              xs: "0.6rem",
+                              sm: "0.75rem",
+                            },
                           }}
                         >
                           {dateTasks.length}
                         </Typography>
                       </Box>
-                    ) : (
-                      !mainReservation &&
-                      belongsToCurrentMonth && (
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "text.secondary",
-                          }}
-                        >
-                          Disponible
-                        </Typography>
-                      )
                     )}
                   </Stack>
                 </Box>
@@ -565,8 +639,20 @@ function CalendarPage() {
                   <Box
                     sx={{
                       borderRadius: 1.5,
-                      px: 1.5,
-                      py: 1.25,
+                      mt: {
+                        xs: 0.25,
+                        sm: 0,
+                      },
+                      px: {
+                        xs: 0.4,
+                        sm: 1,
+                        md: 1.5,
+                      },
+                      py: {
+                        xs: 0.4,
+                        sm: 1,
+                        md: 1.25,
+                      },
                       bgcolor:
                         mainReservation.status === "confirmed"
                           ? "success.main"
@@ -586,7 +672,10 @@ function CalendarPage() {
                     <Typography
                       variant="caption"
                       sx={{
-                        display: "block",
+                        display: {
+                          xs: "none",
+                          sm: "block",
+                        },
                         fontWeight: 700,
                         opacity: 0.9,
                         mb: 0.25,
@@ -600,6 +689,10 @@ function CalendarPage() {
                     <Typography
                       variant="body2"
                       sx={{
+                        display: {
+                          xs: "none",
+                          sm: "block",
+                        },
                         fontWeight: 800,
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -612,7 +705,10 @@ function CalendarPage() {
                     <Typography
                       variant="caption"
                       sx={{
-                        display: "block",
+                        display: {
+                          xs: "none",
+                          sm: "block",
+                        },
                         mt: 0.5,
                         opacity: 0.9,
                       }}
@@ -624,7 +720,10 @@ function CalendarPage() {
                       <Typography
                         variant="caption"
                         sx={{
-                          display: "block",
+                          display: {
+                            xs: "none",
+                            sm: "block",
+                          },
                           mt: 0.5,
                           fontWeight: 700,
                         }}
@@ -633,6 +732,28 @@ function CalendarPage() {
                         {additionalReservations === 1 ? "" : "es"}
                       </Typography>
                     )}
+
+                    <Box
+                      sx={{
+                        display: {
+                          xs: "flex",
+                          sm: "none",
+                        },
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minHeight: 18,
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 800,
+                          lineHeight: 1,
+                        }}
+                      >
+                        {dateReservations.length}
+                      </Typography>
+                    </Box>
                   </Box>
                 )}
               </Box>

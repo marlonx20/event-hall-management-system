@@ -366,6 +366,10 @@ function TasksPage() {
           }}
           spacing={2}
           sx={{
+            width: {
+              xs: "100%",
+              sm: "auto",
+            },
             alignItems: {
               xs: "stretch",
               sm: "center",
@@ -375,7 +379,13 @@ function TasksPage() {
           <FormControl
             size="small"
             sx={{
-              minWidth: 180,
+              width: {
+                xs: "100%",
+                sm: "auto",
+              },
+              minWidth: {
+                sm: 180,
+              },
             }}
           >
             <InputLabel>Ordenar por</InputLabel>
@@ -397,6 +407,12 @@ function TasksPage() {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={openNewTaskDialog}
+            sx={{
+              width: {
+                xs: "100%",
+                sm: "auto",
+              },
+            }}
           >
             Nueva tarea
           </Button>

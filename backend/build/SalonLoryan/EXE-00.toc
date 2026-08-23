@@ -70,7 +70,7 @@
  [],
  False,
  False,
- 1786313213,
+ 1787527329,
  [('runw.exe',
    'C:\\GitProjects\\SalonDeEventosMAnager\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')],

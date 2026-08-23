@@ -7,9 +7,7 @@ import {
   Settings,
   TaskAlt,
 } from "@mui/icons-material";
-
 import CollectionsBookmarkOutlinedIcon from "@mui/icons-material/CollectionsBookmarkOutlined";
-
 import {
   Box,
   Divider,
@@ -22,6 +20,10 @@ import {
 import { NavLink } from "react-router-dom";
 
 const sidebarWidth = 248;
+
+interface SidebarProps {
+  onNavigate?: () => void;
+}
 
 const mainItems = [
   {
@@ -49,13 +51,11 @@ const mainItems = [
     icon: <TaskAlt />,
     path: "/tasks",
   },
-
   {
     label: "Recursos",
     icon: <CollectionsBookmarkOutlinedIcon />,
     path: "/resources",
-},
-
+  },
   {
     label: "Configuración",
     icon: <Settings />,
@@ -63,23 +63,21 @@ const mainItems = [
   },
 ];
 
-function Sidebar() {
+function Sidebar({
+  onNavigate,
+}: SidebarProps) {
   return (
     <Box
       component="aside"
       sx={{
-        position: "fixed",
-        top: 72,
-        left: 0,
-        bottom: 0,
         width: sidebarWidth,
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         bgcolor: "background.paper",
-        borderRight: "1px solid",
-        borderColor: "divider",
         px: 2,
         py: 3,
+        boxSizing: "border-box",
       }}
     >
       <Typography
@@ -101,6 +99,7 @@ function Sidebar() {
             key={item.path}
             to={item.path}
             end={item.path === "/"}
+            onClick={onNavigate}
             style={{
               color: "inherit",
               textDecoration: "none",
@@ -115,15 +114,12 @@ function Sidebar() {
                   px: 1.5,
                   borderRadius: 2.5,
                   position: "relative",
-
                   "&.Mui-selected": {
                     bgcolor: "rgba(70, 140, 0, 0.10)",
                     color: "primary.main",
-
                     "&:hover": {
                       bgcolor: "rgba(70, 140, 0, 0.14)",
                     },
-
                     "&::before": {
                       content: '""',
                       position: "absolute",
@@ -154,7 +150,9 @@ function Sidebar() {
                     primary: {
                       sx: {
                         fontSize: 15,
-                        fontWeight: isActive ? 700 : 500,
+                        fontWeight: isActive
+                          ? 700
+                          : 500,
                       },
                     },
                   }}
@@ -170,39 +168,76 @@ function Sidebar() {
       <Divider sx={{ mb: 2 }} />
 
       <List disablePadding>
-        <ListItemButton
-          sx={{
-            minHeight: 44,
-            px: 1.5,
-            borderRadius: 2.5,
-            mb: 0.5,
+        <NavLink
+          to="/help"
+          onClick={onNavigate}
+          style={{
+            color: "inherit",
+            textDecoration: "none",
           }}
         >
-          <ListItemIcon
-            sx={{
-              minWidth: 40,
-              color: "text.secondary",
-            }}
-          >
-            <HelpOutlined />
-          </ListItemIcon>
-
-          <ListItemText
-            primary="Ayuda"
-            slotProps={{
-              primary: {
-                sx: {
-                  fontSize: 15,
-                  fontWeight: 500,
+          {({ isActive }) => (
+            <ListItemButton
+              selected={isActive}
+              sx={{
+                minHeight: 44,
+                px: 1.5,
+                borderRadius: 2.5,
+                mb: 0.5,
+                position: "relative",
+                "&.Mui-selected": {
+                  bgcolor: "rgba(70, 140, 0, 0.10)",
+                  color: "primary.main",
+                  "&:hover": {
+                    bgcolor: "rgba(70, 140, 0, 0.14)",
+                  },
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    left: -8,
+                    top: 8,
+                    bottom: 8,
+                    width: 4,
+                    borderRadius: 999,
+                    bgcolor: "primary.main",
+                  },
                 },
-              },
-            }}
-          />
-        </ListItemButton>
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 40,
+                  color: isActive
+                    ? "primary.main"
+                    : "text.secondary",
+                }}
+              >
+                <HelpOutlined />
+              </ListItemIcon>
+
+              <ListItemText
+                primary="Ayuda"
+                slotProps={{
+                  primary: {
+                    sx: {
+                      fontSize: 15,
+                      fontWeight: isActive
+                        ? 700
+                        : 500,
+                    },
+                  },
+                }}
+              />
+            </ListItemButton>
+          )}
+        </NavLink>
       </List>
     </Box>
   );
 }
 
-export { sidebarWidth };
+export {
+  sidebarWidth,
+};
+
 export default Sidebar;

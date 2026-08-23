@@ -4,6 +4,9 @@ import type {
   PaymentCreate,
 } from "../types/payment";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "";
+
 export async function createReservationPayment(
   reservationId: number,
   paymentData: PaymentCreate,
@@ -49,28 +52,16 @@ export async function uploadPaymentReceipt(
   );
 }
 
-export async function openPaymentReceipt(
+export function openPaymentReceipt(
   reservationId: number,
   paymentId: number,
-): Promise<void> {
-  const response = await httpClient.get<Blob>(
-    `/reservations/${reservationId}/payments/${paymentId}/receipt`,
-    {
-      responseType: "blob",
-    },
-  );
-
-  const receiptUrl = URL.createObjectURL(
-    response.data,
-  );
+): void {
+  const receiptUrl =
+    `${API_BASE_URL}/reservations/${reservationId}/payments/${paymentId}/receipt`;
 
   window.open(
     receiptUrl,
     "_blank",
     "noopener,noreferrer",
   );
-
-  window.setTimeout(() => {
-    URL.revokeObjectURL(receiptUrl);
-  }, 60_000);
 }
